@@ -1,0 +1,53 @@
+{
+  "instance": {
+    "id": "scout-beta",
+    "name": "Beta",
+    "version": "0.2.0"
+  },
+
+  "models": {
+    "ollama": {
+      "primary": "qwen3:14b"
+    }
+  },
+
+  "search": {
+    "max_results": 8,
+    "cache_ttl_minutes": 60,
+    "timeout_ms": 10000
+  },
+
+  "summarize": {
+    "max_input_tokens": 4000,
+    "max_output_tokens": 512,
+    "temperature": 0.3
+  },
+
+  "budget": {
+    "warning_threshold_usd": 0,
+    "hard_cap_usd": 0,
+    "period": "monthly"
+  },
+
+  "axip": {
+    "relay_url": "ws://127.0.0.1:4200",
+    "agent_name": "scout-beta",
+    "capabilities": ["web_search", "summarize"],
+    "pricing": {
+      "web_search": { "base_usd": 0.03 },
+      "summarize": { "base_usd": 0.02 }
+    },
+    "bidding": {
+      "auto_bid": true,
+      "max_concurrent_tasks": 5,
+      "default_eta_seconds": 15,
+      "default_confidence": 0.90
+    },
+    "metadata": {
+      "operator": "Axios AI Innovations",
+      "mission_aligned": true,
+      "node_type": "core",
+      "runtime": "ollama/qwen3:14b"
+    }
+  }
+}

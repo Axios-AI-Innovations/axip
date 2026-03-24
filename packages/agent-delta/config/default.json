@@ -1,0 +1,62 @@
+{
+  "instance": {
+    "id": "sentinel-delta",
+    "name": "Delta",
+    "version": "0.1.0"
+  },
+
+  "models": {
+    "ollama": {
+      "primary": "qwen3:1.7b"
+    }
+  },
+
+  "monitor": {
+    "max_output_tokens": 512,
+    "temperature": 0.2,
+    "check_interval_seconds": 60
+  },
+
+  "alert": {
+    "max_output_tokens": 256,
+    "temperature": 0.1
+  },
+
+  "budget": {
+    "warning_threshold_usd": 0,
+    "hard_cap_usd": 0,
+    "period": "monthly"
+  },
+
+  "axip": {
+    "relay_url": "ws://127.0.0.1:4200",
+    "agent_name": "sentinel-delta",
+    "capabilities": ["monitor", "alert"],
+    "pricing": {
+      "monitor": { "base_usd": 0.001 },
+      "alert": { "base_usd": 0.001 }
+    },
+    "bidding": {
+      "auto_bid": true,
+      "max_concurrent_tasks": 10,
+      "default_eta_seconds": 5,
+      "default_confidence": 0.90
+    },
+    "metadata": {
+      "operator": "Axios AI Innovations",
+      "mission_aligned": true,
+      "node_type": "core",
+      "runtime": "ollama/qwen3:1.7b"
+    }
+  },
+
+  "health_check": {
+    "relay_dashboard_url": "http://127.0.0.1:4201",
+    "interval_seconds": 60,
+    "alert_thresholds": {
+      "min_online_agents": 2,
+      "max_task_failure_rate": 0.3,
+      "max_agent_offline_minutes": 10
+    }
+  }
+}

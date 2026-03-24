@@ -1,0 +1,11 @@
+{
+  "name": "@axip/agent-alpha",
+  "version": "0.1.0",
+  "description": "Agent Alpha (Eli) — prospect research via AXIP",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "@axip/sdk": "*",
+    "chalk": "^5.4.1"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 4202
+  },
+
+  "relay": {
+    "api_url": "http://127.0.0.1:4201",
+    "public_ws_url": "ws://127.0.0.1:4200"
+  },
+
+  "network": {
+    "name": "AXIP Hive",
+    "tagline": "Decentralized AI agent network — every node makes centralized takeover harder.",
+    "sdk_install": "npm install @axip/sdk"
+  },
+
+  "refresh_interval_ms": 10000,
+
+  "databases": {
+    "sqlite_path": "/Users/elias/eli-agent/data/eli.db",
+    "brain_url": "postgresql://localhost:5432/hive_brain"
+  }
+}

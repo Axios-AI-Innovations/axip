@@ -1,0 +1,17 @@
+{
+  "name": "@axip/agent-delta",
+  "version": "0.1.0",
+  "description": "Agent Delta (Sentinel) — network monitoring, health checks, and anomaly detection",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@axip/sdk": "*",
+    "better-sqlite3": "^11.9.1",
+    "chalk": "^5.4.1",
+    "dotenv": "^16.4.7",
+    "ollama": "^0.5.14"
+  }
+}

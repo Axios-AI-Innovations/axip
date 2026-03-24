@@ -1,0 +1,18 @@
+{
+  "name": "@axip/agent-beta",
+  "version": "0.2.0",
+  "description": "Agent Beta (Scout) — live web search and LLM summarization via AXIP",
+  "type": "module",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@axip/sdk": "*",
+    "better-sqlite3": "^11.9.1",
+    "chalk": "^5.4.1",
+    "dotenv": "^16.4.7",
+    "duck-duck-scrape": "^2.2.5",
+    "ollama": "^0.5.14"
+  }
+}

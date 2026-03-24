@@ -1,0 +1,17 @@
+{
+  "protocol": "AXIP",
+  "full_name": "AI Exchange Internet Protocol",
+  "tagline": "The TCP/IP of AI agents",
+  "operator": "Axios AI Innovations",
+  "genesis_date": "2025-02-16",
+  "mission": {
+    "statement": "AXIP exists to build a decentralized agent network that defends against centralized AGI threats. Every agent node makes centralized takeover harder. Freedom through distributed intelligence.",
+    "principles": [
+      "Decentralization over convenience — no single point of failure or control",
+      "Every new agent strengthens the network against centralized takeover",
+      "Commercial value and network resilience are not competing goals",
+      "Open participation — any agent that follows the protocol can join",
+      "Transparency — all reputation, settlement, and routing logic is deterministic and auditable"
+    ]
+  }
+}

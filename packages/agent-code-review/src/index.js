@@ -1,0 +1,243 @@
+/**
+ * Agent Code Review — AI-Powered Code Review Agent
+ *
+ * Provides code_review capability via local Ollama (qwen3:14b).
+ * Accepts code snippets and returns structured issue lists with quality scores.
+ *
+ * Boot sequence:
+ *   1. Load environment variables
+ *   2. Initialize SQLite database
+ *   3. Health check Ollama (verify qwen3:14b is available)
+ *   4. Create AXIPAgent and wire event handlers
+ *   5. Connect to relay
+ */
+
+import 'dotenv/config';
+import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
+import { AXIPAgent } from '@axip/sdk';
+import chalk from 'chalk';
+import { initDatabase, closeDatabase } from './db.js';
+import { healthCheck } from './llm/ollama.js';
+import { codeReview } from './skills/codeReview.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = join(__dirname, '..');
+
+const config = JSON.parse(readFileSync(join(PROJECT_ROOT, 'config', 'default.json'), 'utf-8'));
+const axipConfig = config.axip || {};
+const biddingConfig = axipConfig.bidding || {};
+
+const PREFIX = chalk.magenta('[CODE-REVIEW]');
+
+let agent = null;
+const activeTasks = new Map();
+
+const BANNER = `
+╔══════════════════════════════════════╗
+║   🔎  AGENT CODE REVIEW  🔎          ║
+║    AI Code Analysis v${config.instance?.version || '0.1.0'}         ║
+╚══════════════════════════════════════╝
+`;
+
+async function main() {
+  console.log(BANNER);
+  console.log(`${PREFIX} Starting at ${new Date().toISOString()}`);
+  console.log(`${PREFIX} Instance: ${config.instance?.id || 'code-review'}`);
+  console.log(`${PREFIX} Node.js: ${process.version}`);
+  console.log(`${PREFIX} PID: ${process.pid}`);
+  console.log('');
+
+  // ─── 1. Database ────────────────────────────────────────────────
+  try {
+    initDatabase();
+  } catch (err) {
+    console.error(`${PREFIX} FATAL: Database initialization failed: ${err.message}`);
+    process.exit(1);
+  }
+
+  // ─── 2. Ollama Health Check ─────────────────────────────────────
+  const model = config.models?.ollama?.primary || 'qwen3:14b';
+  try {
+    const health = await healthCheck(model);
+    if (!health.running) {
+      console.error(`${PREFIX} WARNING: Ollama is not running at ${process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'}`);
+      console.error(`${PREFIX} Code review will fail. Start Ollama and restart.`);
+    } else if (!health.model_available) {
+      console.error(`${PREFIX} WARNING: Model ${model} not found in Ollama.`);
+      console.error(`${PREFIX} Available models: ${health.models.join(', ') || 'none'}`);
+      console.error(`${PREFIX} Run: ollama pull ${model}`);
+    } else {
+      console.log(`${PREFIX} ${chalk.green('✓')} Ollama healthy. Model: ${model}`);
+    }
+  } catch (err) {
+    console.error(`${PREFIX} WARNING: Ollama health check failed: ${err.message}`);
+  }
+
+  // ─── 3. Create AXIP Agent ───────────────────────────────────────
+  agent = new AXIPAgent({
+    name: axipConfig.agent_name || 'code-review',
+    capabilities: axipConfig.capabilities || ['code_review'],
+    relayUrl: process.env.AXIP_RELAY_URL || axipConfig.relay_url || 'ws://127.0.0.1:4200',
+    pricing: axipConfig.pricing || {},
+    metadata: axipConfig.metadata || {}
+  });
+
+  // ─── 4. Wire Event Handlers ─────────────────────────────────────
+  _wireEventHandlers();
+
+  // ─── 5. Connect to Relay ────────────────────────────────────────
+  await agent.start();
+  console.log('');
+  console.log(`${PREFIX} ${chalk.green('✓')} Connected to relay at ${agent.relayUrl}`);
+  console.log(`${PREFIX} Agent ID: ${agent.identity.agentId}`);
+  console.log(`${PREFIX} ${chalk.gray('Capabilities:')} ${(axipConfig.capabilities || []).join(', ')}`);
+  console.log(`${PREFIX} ${chalk.gray('Model:')} ${model} (local Ollama)`);
+  console.log(`${PREFIX} ${chalk.gray('Pricing:')} $${axipConfig.pricing?.code_review?.base_usd || 0.05} per review`);
+  console.log('');
+  console.log(`${PREFIX} ${chalk.green('✓')} All systems initialized. Waiting for tasks...`);
+  console.log('');
+}
+
+// ─── Event Handlers ───────────────────────────────────────────────
+
+function _wireEventHandlers() {
+  agent.on('task_request', async (msg) => {
+    const taskId = msg.payload.task_id;
+    const capability = msg.payload.capability_required;
+
+    const supported = axipConfig.capabilities || ['code_review'];
+    if (!supported.includes(capability)) {
+      console.log(`${PREFIX} Ignoring task for capability: ${capability}`);
+      return;
+    }
+
+    if (!biddingConfig.auto_bid) {
+      console.log(`${PREFIX} Auto-bid disabled. Ignoring task ${taskId}`);
+      return;
+    }
+
+    if (activeTasks.size >= (biddingConfig.max_concurrent_tasks || 3)) {
+      console.log(`${PREFIX} At max concurrent tasks (${activeTasks.size}). Skipping ${taskId}`);
+      return;
+    }
+
+    console.log(`${PREFIX} ${chalk.bold('◄')} Task received: ${capability}`);
+
+    const pricing = axipConfig.pricing?.[capability] || {};
+    const price = pricing.base_usd || 0.05;
+    const model = config.models?.ollama?.primary || 'qwen3:14b';
+
+    const bidMsg = agent.sendBid(msg.from.agent_id, taskId, {
+      price,
+      etaSeconds: biddingConfig.default_eta_seconds || 30,
+      confidence: biddingConfig.default_confidence || 0.88,
+      model,
+      message: `Code review via ${model}. Returns issues, summary, quality_score.`
+    });
+
+    activeTasks.set(taskId, {
+      capability,
+      payload: msg.payload.input || {},
+      requesterId: msg.from.agent_id,
+      bidId: bidMsg.payload.bid_id,
+      startTime: Date.now()
+    });
+
+    console.log(`${PREFIX} ${chalk.bold('►')} Bid sent: $${price}, ETA ${biddingConfig.default_eta_seconds || 30}s`);
+  });
+
+  agent.on('task_accept', async (msg) => {
+    const taskId = msg.payload.task_id;
+    const taskInfo = activeTasks.get(taskId);
+
+    if (!taskInfo) {
+      console.warn(`${PREFIX} Accepted unknown task: ${taskId}`);
+      return;
+    }
+
+    console.log(`${PREFIX} ${chalk.green('✓')} Task accepted! Working on ${taskId.slice(0, 16)}...`);
+
+    try {
+      const startTime = Date.now();
+      const { code, language, focus } = taskInfo.payload;
+
+      console.log(`${PREFIX} ${chalk.gray('…')} Reviewing ${language || 'code'} (${(code || '').length} chars)${focus ? `, focus: ${focus}` : ''}`);
+
+      const output = await codeReview({ code, language, focus });
+      const actualTime = Math.round((Date.now() - startTime) / 1000);
+
+      console.log(`${PREFIX} ${chalk.gray('…')} Found ${output.issues.length} issue(s), quality_score: ${output.quality_score}`);
+
+      agent.sendResult(taskInfo.requesterId, taskId, output, {
+        actualCost: 0,
+        actualTime,
+        modelUsed: config.models?.ollama?.primary || 'qwen3:14b'
+      });
+
+      console.log(`${PREFIX} ${chalk.bold('►')} Results delivered for ${taskId.slice(0, 16)} (${actualTime}s)`);
+
+    } catch (err) {
+      console.error(`${PREFIX} ${chalk.red('✗')} Task failed: ${err.message}`);
+
+      agent.sendResult(taskInfo.requesterId, taskId,
+        { error: `Code review failed: ${err.message}`, issues: [], summary: 'Review failed.', quality_score: 0 },
+        { status: 'failed' }
+      );
+    }
+
+    activeTasks.delete(taskId);
+  });
+
+  agent.on('task_settle', (msg) => {
+    console.log(`${PREFIX} ${chalk.green('$')} Settlement: $${msg.payload.amount_usd}`);
+  });
+
+  agent.on('disconnected', () => {
+    console.log(`${PREFIX} Disconnected from relay.`);
+  });
+
+  // Clear stale tasks on reconnect
+  agent.connection.on('connected', () => {
+    if (activeTasks.size > 0) {
+      console.log(`${PREFIX} Reconnected — clearing ${activeTasks.size} stale active task(s)`);
+      activeTasks.clear();
+    }
+  });
+}
+
+// ─── Graceful Shutdown ────────────────────────────────────────────
+
+function shutdown(signal) {
+  console.log(`\n${PREFIX} Received ${signal}. Shutting down gracefully...`);
+
+  if (agent) {
+    agent.stop();
+  }
+  closeDatabase();
+
+  console.log(`${PREFIX} Goodbye. 👋`);
+  process.exit(0);
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
+
+process.on('uncaughtException', (err) => {
+  console.error(`${PREFIX} UNCAUGHT EXCEPTION: ${err.message}`);
+  console.error(err.stack);
+  shutdown('uncaughtException');
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error(`${PREFIX} UNHANDLED REJECTION: ${reason}`);
+  shutdown('unhandledRejection');
+});
+
+// ─── Start ────────────────────────────────────────────────────────
+main().catch((err) => {
+  console.error(chalk.red(`${PREFIX} FATAL: ${err.message}`));
+  process.exit(1);
+});

@@ -1,0 +1,14 @@
+{
+  "name": "@axip/relay",
+  "version": "0.1.0",
+  "description": "AXIP Relay Server — routes messages between agents",
+  "type": "module",
+  "main": "src/index.js",
+  "dependencies": {
+    "@axip/sdk": "*",
+    "better-sqlite3": "^11.9.1",
+    "chalk": "^5.4.1",
+    "express": "^4.21.0",
+    "ws": "^8.18.0"
+  }
+}

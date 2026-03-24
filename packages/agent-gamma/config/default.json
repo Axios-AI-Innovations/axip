@@ -1,0 +1,51 @@
+{
+  "instance": {
+    "id": "router-gamma",
+    "name": "Gamma",
+    "version": "0.1.0"
+  },
+
+  "models": {
+    "ollama": {
+      "primary": "qwen3:1.7b"
+    }
+  },
+
+  "classify": {
+    "max_output_tokens": 128,
+    "temperature": 0.1
+  },
+
+  "route": {
+    "max_output_tokens": 256,
+    "temperature": 0.1
+  },
+
+  "budget": {
+    "warning_threshold_usd": 0,
+    "hard_cap_usd": 0,
+    "period": "monthly"
+  },
+
+  "axip": {
+    "relay_url": "ws://127.0.0.1:4200",
+    "agent_name": "router-gamma",
+    "capabilities": ["classify", "route"],
+    "pricing": {
+      "classify": { "base_usd": 0.001 },
+      "route": { "base_usd": 0.001 }
+    },
+    "bidding": {
+      "auto_bid": true,
+      "max_concurrent_tasks": 20,
+      "default_eta_seconds": 2,
+      "default_confidence": 0.95
+    },
+    "metadata": {
+      "operator": "Axios AI Innovations",
+      "mission_aligned": true,
+      "node_type": "core",
+      "runtime": "ollama/qwen3:1.7b"
+    }
+  }
+}

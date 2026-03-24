@@ -1,0 +1,14 @@
+node_modules/
+data/*.db
+data/*.db-journal
+data/*.db-wal
+data/*.db-shm
+.env
+.DS_Store
+*.swp
+*.swo
+.vscode/
+*.pem
+*.key
+identity.json
+packages/*/.env

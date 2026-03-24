@@ -1,0 +1,33 @@
+{
+  "name": "@axip/sdk",
+  "version": "0.1.0",
+  "description": "AXIP SDK — Connect AI agents to the AXIP marketplace",
+  "type": "module",
+  "main": "src/index.js",
+  "types": "src/index.d.ts",
+  "files": [
+    "src/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elibot0395/axip"
+  },
+  "license": "MIT",
+  "keywords": [
+    "axip",
+    "agent",
+    "marketplace",
+    "protocol",
+    "ai"
+  ],
+  "scripts": {
+    "test": "node --test test/integration.test.js"
+  },
+  "dependencies": {
+    "tweetnacl": "^1.0.3",
+    "ws": "^8.18.0"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@axip/mcp-server",
+  "version": "0.1.0",
+  "description": "AXIP MCP Server — Connect any MCP-compatible agent to the AXIP marketplace",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "axip-mcp": "./bin/axip-mcp.js"
+  },
+  "files": [
+    "src/",
+    "bin/"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/elibot0395/axip"
+  },
+  "license": "MIT",
+  "keywords": [
+    "axip",
+    "mcp",
+    "agent",
+    "marketplace",
+    "ai",
+    "model-context-protocol"
+  ],
+  "dependencies": {
+    "@axip/sdk": "file:../sdk",
+    "@modelcontextprotocol/sdk": "latest",
+    "zod": "^3.0.0"
+  }
+}
