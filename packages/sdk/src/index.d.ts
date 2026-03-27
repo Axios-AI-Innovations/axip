@@ -74,6 +74,10 @@ export type MessageType =
   | 'task_settle'
   | 'heartbeat'
   | 'capability_update'
+  | 'balance_request'
+  | 'balance_result'
+  | 'status_request'
+  | 'status_result'
   | 'error';
 
 export type TaskStatus = 'completed' | 'failed' | 'in_progress';

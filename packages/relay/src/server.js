@@ -12,7 +12,9 @@ import { messages as msgLib, crypto as cryptoLib } from '@axip/sdk';
 import * as registry from './registry.js';
 import * as router from './router.js';
 import * as taskManager from './taskManager.js';
+import * as ledger from './ledger.js';
 import * as logger from './logger.js';
+import { getDb } from './db.js';
 
 /**
  * Create and configure the WebSocket relay server.
@@ -376,6 +378,68 @@ function _handleMessage(ws, msg, clients) {
       }).catch(err => {
         logger.error('relay', 'task_verify handler error', { error: err.message });
       });
+      break;
+    }
+
+    // ─── Balance Request ────────────────────────────────────────
+    case 'balance_request': {
+      const requesterId = msg.from.agent_id;
+      ledger.getBalance(requesterId).then(balanceUsd => {
+        const response = msgLib.buildMessage('balance_result', RELAY_IDENTITY, requesterId, {
+          agent_id: requesterId,
+          balance_usd: balanceUsd
+        });
+        if (ws.readyState === 1) ws.send(JSON.stringify(response));
+        logger.info('relay', 'Balance request served', { agentId: requesterId, balance: balanceUsd });
+      }).catch(err => {
+        logger.error('relay', 'balance_request handler error', { error: err.message });
+      });
+      break;
+    }
+
+    // ─── Status Request ─────────────────────────────────────────
+    case 'status_request': {
+      try {
+        const db = getDb();
+        const allAgents = registry.getAllAgents();
+        const onlineAgents = allAgents.filter(a => a.status === 'online');
+
+        // Collect unique capabilities from online agents
+        const capabilitySet = new Set();
+        for (const agent of onlineAgents) {
+          try {
+            const caps = JSON.parse(agent.capabilities || '[]');
+            caps.forEach(c => capabilitySet.add(c));
+          } catch (_) {}
+        }
+
+        // Task stats from SQLite (synchronous)
+        const taskStats = db.prepare(`
+          SELECT
+            COUNT(*) AS total_tasks,
+            SUM(CASE WHEN state = 'SETTLED' THEN 1 ELSE 0 END) AS tasks_settled,
+            SUM(CASE WHEN state = 'SETTLED' AND settled_at >= datetime('now', '-1 day') THEN 1 ELSE 0 END) AS tasks_today
+          FROM tasks
+        `).get();
+
+        const volumeRow = db.prepare(
+          "SELECT COALESCE(SUM(amount), 0) AS total_volume FROM ledger WHERE type = 'settlement'"
+        ).get();
+
+        const response = msgLib.buildMessage('status_result', RELAY_IDENTITY, msg.from.agent_id, {
+          agents_online: onlineAgents.length,
+          total_agents: allAgents.length,
+          capabilities: Array.from(capabilitySet).sort(),
+          tasks_today: taskStats?.tasks_today ?? 0,
+          tasks_total: taskStats?.total_tasks ?? 0,
+          tasks_settled: taskStats?.tasks_settled ?? 0,
+          total_volume_usd: parseFloat((volumeRow?.total_volume ?? 0).toFixed(4))
+        });
+        if (ws.readyState === 1) ws.send(JSON.stringify(response));
+        logger.info('relay', 'Status request served', { agentsOnline: onlineAgents.length });
+      } catch (err) {
+        logger.error('relay', 'status_request handler error', { error: err.message });
+      }
       break;
     }
 

@@ -1,6 +1,226 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-03-23
+> Last updated: 2026-03-27
+
+---
+
+## Today's Implementation (2026-03-27)
+
+### PAY-6 / MCP Fix: balance_request + status_request Relay Handlers
+
+**Task:** Add `balance_request` and `status_request` WebSocket message handlers to the relay so the MCP server's `axip_check_balance` and `axip_network_status` tools return real data instead of timing out with "not yet supported".
+
+**Problem:** The MCP server's `axip_check_balance` and `axip_network_status` tools had a 5-second timeout fallback because the relay had no handlers for these message types. External agents using the MCP server got no useful balance or network data.
+
+**What was done:**
+
+`packages/relay/src/server.js`:
+- Added `import * as ledger from './ledger.js'` and `import { getDb } from './db.js'`
+- Added `case 'balance_request'` handler:
+  - Calls `ledger.getBalance(agentId)` (which uses PostgreSQL when available, SQLite otherwise)
+  - Responds with `balance_result` message containing `{ agent_id, balance_usd }`
+  - Logs each balance query
+- Added `case 'status_request'` handler:
+  - Queries SQLite for all agents (online count, total count)
+  - Collects unique capabilities from online agents
+  - Queries task stats (total, settled, today)
+  - Queries total settlement volume from ledger
+  - Responds with `status_result` message containing full network snapshot
+
+`packages/sdk/src/messages.js`:
+- Added `'balance_request'`, `'balance_result'`, `'status_request'`, `'status_result'` to `VALID_TYPES`
+- Without this, the relay's incoming message validation would reject these new types before dispatching
+
+`packages/sdk/src/AXIPAgent.js`:
+- Added `case 'balance_result'` → emits `balance_result` event
+- Added `case 'status_result'` → emits `status_result` event
+- Without this, responses fell into `unknown_message` and MCP tool promises never resolved
+
+`packages/sdk/src/index.d.ts`:
+- Added `'balance_request'`, `'balance_result'`, `'status_request'`, `'status_result'` to `MessageType` union
+
+**Confirmed working (test output):**
+```
+balance_result: { "agent_id": "test-balance-MDYhcLys", "balance_usd": 0 }
+status_result: {
+  "agents_online": 11, "total_agents": 17,
+  "capabilities": ["alert","classify","code_review","data_extraction","monitor","prospect_research","route","summarize","translate","web_search"],
+  "tasks_today": 0, "tasks_total": 12, "tasks_settled": 6, "total_volume_usd": 0.18
+}
+```
+- Relay logged: `Balance request served` and `Status request served` — correct handlers firing
+- PostgreSQL IS running (connected on balance_request trigger)
+- All 7 anchor agents reconnected cleanly after relay restart
+- PM2 saved
+
+---
+
+## Today's Implementation (2026-03-26)
+
+### AGT-6: Production Pricing for All Anchor Agents
+
+**Task:** Register all anchor agents with production pricing that reflects real value delivered.
+
+**Pricing changes applied:**
+
+| Capability | Agent | Old Price | New Price | Rationale |
+|---|---|---|---|---|
+| web_search | scout-beta | $0.03 | $0.05 | DDG search + qwen3:14b LLM relevance scoring (8 results) |
+| summarize | scout-beta | $0.03 | $0.05 | Optional URL fetch + qwen3:14b summarization (768 tokens) |
+| code_review | code-review | $0.05 | $0.08 | Deep analysis, qwen3:14b, up to 2048 tokens output |
+| data_extraction | data-extract | $0.04 | $0.05 | Web scrape + qwen3:14b structured extraction |
+| translate | translator-alpha | $0.02 | $0.04 | qwen3:14b translation, up to 4096 tokens, 30+ languages |
+| monitor | sentinel-delta | $0.001 | $0.002 | Real health checks + qwen3:1.7b analysis |
+| alert | sentinel-delta | $0.001 | $0.002 | Alert generation via qwen3:1.7b |
+| classify | router-gamma | $0.001 | $0.001 | Ultra-fast qwen3:1.7b (no change) |
+| route | router-gamma | $0.001 | $0.001 | Ultra-fast qwen3:1.7b (no change) |
+
+**Files changed:**
+- `packages/agent-beta/config/default.json` — web_search $0.03→$0.05, summarize $0.03→$0.05
+- `packages/agent-code-review/config/default.json` — code_review $0.05→$0.08
+- `packages/agent-data-extract/config/default.json` — data_extraction $0.04→$0.05
+- `packages/agent-translate/config/default.json` — translate $0.02→$0.04
+- `packages/agent-delta/config/default.json` — monitor/alert $0.001→$0.002
+
+**Confirmed working:**
+- All 5 agents restarted and reconnected cleanly (relay logs confirm disconnect + reconnect for each)
+- Portal `/api/agents` confirms new pricing stored in relay DB for all active agent instances
+- PM2 saved
+
+---
+
+## Today's Implementation (2026-03-25)
+
+### AGT-1/AGT-4: Upgrade Agent Beta — URL-aware Summarize + Production Polish
+
+**Task:** Upgrade agent-beta's `web_search` and `summarize` capabilities for production (AGT-1, AGT-4).
+
+**What was done:** Upgraded `packages/agent-beta/` v0.2.0 → v0.3.0 with:
+
+**`packages/agent-beta/src/skills/summarize.js`** — URL-aware summarization:
+- Added `detectUrl(text)`: Detects URLs in description (direct `https://...` or `"summarize https://..."` patterns)
+- Added `fetchPage(url)`: Fetches web pages with 15s timeout, strips HTML/scripts/nav/footer, truncates at 40K chars
+- Updated `summarize(description, constraints)`: Now resolves input in priority order:
+  1. `constraints.url` — structured URL from task requester (e.g., MCP clients, SDK callers)
+  2. URL detected in `description` — smart detection for natural language requests
+  3. Plain text — backward-compatible (existing behavior unchanged)
+- Improved system prompt: "No filler phrases" + more specific extraction instructions
+- Raised `max_output_tokens` from 512 → 768 (more room for quality summaries)
+- Lowered temperature from 0.3 → 0.2 (more deterministic, factual output)
+- Added `source_url` and `source_title` to output when URL was fetched
+
+**`packages/agent-beta/src/index.js`** — Pass `constraints` through:
+- Stores `constraints: msg.payload.constraints || {}` in activeTasks
+- Passes `constraints` to `summarize(description, constraints)` on task_accept
+- Logs whether it's summarizing a URL or plain text
+
+**`packages/agent-beta/config/default.json`** — Updated:
+- Version: `0.2.0` → `0.3.0`
+- Added `summarize.fetch_timeout_ms: 15000` and `summarize.max_page_chars: 40000`
+- Raised `summarize.base_usd`: `$0.02` → `$0.03` (URL fetch adds real cost/latency)
+- Updated `max_output_tokens`: 512 → 768 and `temperature`: 0.3 → 0.2
+
+**Confirmed working:**
+- Agent restarted: v0.3.0 banner visible
+- Relay logs: `scout-beta-wOHiQdnE` disconnected + reconnected cleanly
+- No errors in relay or agent-beta logs
+- PM2 saved
+
+**Capabilities after this upgrade:**
+- `web_search`: unchanged — DDG + LLM relevance scoring, 60-min cache
+- `summarize` (production-ready):
+  - Accepts raw text: `"The following article discusses..."`
+  - Accepts URL in description: `"https://techcrunch.com/article/..."` or `"Summarize https://..."`
+  - Accepts structured URL: `constraints: { url: "https://..." }` (from MCP clients / SDK)
+  - Returns: `{ summary, key_points[], original_length, summary_length, source_url?, source_title? }`
+
+---
+
+## Evening Verification (2026-03-25)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 10 processes online: axip-relay, hive-portal, agent-beta (v0.3.0, 11h uptime), agent-gamma, agent-delta, agent-code-review, agent-data-extract, agent-translate, eli, ollama |
+| Relay health | ✅ PASS | `/api/stats` → 8 agents online, 14 total, 6 tasks settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online: true, 8 agents, 10 capabilities (translate now in list) |
+| agent-beta connectivity | ✅ PASS | "All systems initialized. Waiting for tasks..." — clean startup, v0.3.0 confirmed |
+| agent-beta reconnect (v0.3.0) | ✅ PASS | Relay logs show clean disconnect + reconnect at 14:34 matching upgrade time |
+| Relay error logs | ✅ PASS | Zero errors in error log. Only info-level reconnect events |
+| Discover smoke test | ✅ PASS | e2e-tester connected, `web_search` discover found 2 matches — routing works |
+| agent-translate | ✅ PASS | PM2 online (35h uptime), translator-alpha visible in portal with `translate` capability |
+
+### Issues Found
+
+1. **Duplicate agent entries in portal** (low priority): `eli-alpha` and `scout-beta` each appear twice in the agents list — one entry with `operator: "Axios AI Innovations"` and one with `operator: null`. Likely leftover test/reconnect sessions not being evicted. No functional impact but the dashboard count (8 online) inflates slightly.
+
+2. **mcp-client cycling** (low priority): mcp-client connected/disconnected briefly at 23:09. Benign test client, not a production agent.
+
+### Recommended Next Tasks (2026-03-25)
+
+1. **AGT-6** — Build `prospect_research` skill improvements for eli-alpha (currently basic stub, upgrade to structured output).
+2. **AGT-7 or AGT-1 follow-up** — End-to-end test of URL summarize: submit a real task via MCP client with `constraints.url` and verify the output includes `source_url` + `source_title`.
+3. **Fix duplicate agent entries** — Investigate relay agent registry: ensure reconnects update existing entry rather than inserting a new one (likely a missing `agentId` dedup step in the announce handler).
+4. **Start PostgreSQL** — `brew services start postgresql@14` — needed to validate PAY-9 escrow end-to-end (currently falling back to SQLite).
+5. **PAY-2/3/4** — MANUAL: Stripe Connect setup (requires Stripe API keys from Elias).
+
+---
+
+## Today's Implementation (2026-03-24)
+
+### AGT-5: Build Translate Agent
+
+**Task:** Build the translate capability agent (AGT-5) following existing agent patterns.
+
+**What was built:** `packages/agent-translate/` — full agent package with:
+- `src/index.js` — AXIPAgent main entry, event handlers, auto-bidding, task lifecycle
+- `src/skills/translate.js` — Translation skill using qwen3:14b via Ollama. Input: `{ text, to, from? }`. Output: `{ translated, detected_language, target_language, confidence, char_count }`. Supports 30+ languages by name or ISO code, auto-detects source language, handles truncation for long texts (20K char limit), structured JSON output with LLM fallback parsing.
+- `src/llm/ollama.js`, `src/router.js`, `src/db.js`, `src/cost-tracker.js` — Supporting infrastructure (60s timeout for long translations)
+- `config/default.json` — translator-alpha, `translate` capability, $0.02/translation, 20s ETA, qwen3:14b
+
+**Confirmed working:**
+- Agent started: `pm2 start` → `agent-translate` online (PM2 id 12)
+- Relay confirmed: agents_online went from 8 → 9
+- Agent ID: `translator-alpha-SBlbHw4e`
+- PM2 saved
+
+**Also audited (already complete, not marked in PROGRESS):**
+- AGT-2 (code_review): `packages/agent-code-review/` fully implemented and running (PM2 id 10)
+- AGT-3 (data_extraction): `packages/agent-data-extract/` fully implemented and running (PM2 id 11)
+
+---
+
+## Evening Verification (2026-03-23)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 9 processes online (axip-relay, hive-portal, agent-beta, agent-gamma, agent-delta, agent-code-review, agent-data-extract, eli, ollama) |
+| Relay health | ✅ PASS | `/health` → status: ok, uptime: 40529s, agents_online: 8, v0.1.0 |
+| Relay stats | ✅ PASS | 6 agents online, 13 total, 6 tasks settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online: true, 6 agents, 9 capabilities listed |
+| agent-beta connectivity | ⚠️ WARN | PM2 shows "online" (2D uptime) but last log line: "Disconnected from relay". Portal shows scout-beta online — likely auto-reconnected |
+| Relay error logs | ✅ PASS | Zero errors in last 50 lines. Only info-level reconnects |
+| PostgreSQL | ❌ FAIL | `pg_isready` reports not running. PAY-9 escrow code requires Postgres — falls back to SQLite. Credit balance API returns error |
+| eli-alpha reconnects | ⚠️ WARN | Reconnecting every ~5 min (disconnect + reconnect cycle visible in relay logs) — still no restart since prior run |
+
+### Issues Found
+
+1. **PostgreSQL not running** (medium priority): PAY-9 escrow/refund flow was implemented today targeting `pg-ledger.js`, but Postgres is down. The relay falls back to SQLite ledger (`ledger.js`), so tasks still work but credit persistence across relay restarts is SQLite-only. Elias should check: `brew services start postgresql` or equivalent.
+
+2. **agent-beta log shows disconnect** (low priority): Last log line is "Disconnected from relay" but PM2 status is `online` and portal API shows scout-beta connected. Likely reconnected silently after log rotation — not critical.
+
+3. **eli-alpha reconnect cycling** (low priority): eli-alpha disconnects and reconnects every ~5 minutes. Consistent with old SDK in memory (no nonce in heartbeats causing relay to drop connection). Fix: `pm2 restart eli`.
+
+### Recommended Next Tasks (2026-03-24)
+
+1. **Start PostgreSQL** — run `brew services start postgresql@14` (or whichever version is installed). Required to validate PAY-9 escrow flow end-to-end.
+2. **Restart eli agent** — `pm2 restart eli` — loads updated SDK, fixes reconnect cycling.
+3. **PAY-2/3/4** — MANUAL: Stripe Connect setup (requires Stripe API keys from Elias).
+4. **AGT-1/4** — Upgrade agent-beta to production capability (web_search + summarize with better prompts).
+5. **AGT-5** — Build translate agent (Ollama).
 
 ---
 
@@ -176,9 +396,9 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 2. **PAY-3** — MANUAL: Stripe Checkout deposit (requires Stripe API keys)
 3. **PAY-4** — MANUAL: Stripe withdrawal (requires Stripe API keys)
 4. **PAY-7** — Blocked on PAY-3 (deposit bonus tiers)
-5. **AGT-1/4** — Upgrade agent-beta (web_search + summarize) for production
-6. **AGT-5** — Build translate agent (Ollama)
-7. **AGT-6** — Register all agents with production pricing
+5. **AGT-1/4** — ✅ Done (2026-03-25) — agent-beta v0.3.0, URL-aware summarize, production prompts
+6. **AGT-5** — ✅ Done (translate agent live as translator-alpha)
+7. **AGT-6** — ✅ Done (2026-03-26) — production pricing set for all anchor agents
 
 **SDK/MCP publishing (MANUAL — still blocked):**
 - **SDK-5** — `npm publish @axip/sdk` (needs npm login)
@@ -205,3 +425,14 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-23 | axip-daily-driver | PAY-9 implemented: escrow + refund flow for failed tasks. Discovered PAY-1/5/6/8 were already done; PAY-2/3/4 require Stripe keys (MANUAL). Implemented proper escrow pattern: debit requester at accept (rejects if insufficient balance), release to provider at settle, auto-refund on IN_PROGRESS timeout or dispute. 3 files changed: pg-ledger.js (+escrowForTask/releaseEscrow/refundEscrow), ledger.js (+escrowTask/releaseEscrow/refundTask + SQLite fallbacks), taskManager.js (wired escrow at accept, refund at timeout/dispute, releaseEscrow at settle with legacy fallback). Relay restarted clean, 5 agents reconnected, no errors. |
 | 2026-03-23 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. |
 | 2026-03-23 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE. Per task guard: Epic 3 (SDK Publishing) is still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers). All MCP-1 through MCP-9 already complete. No code changes needed. |
+| 2026-03-24 | axip-daily-driver | AGT-5 implemented: translate agent built and deployed. packages/agent-translate/ — full agent package with translate skill using qwen3:14b. Supports 30+ languages, auto-detection, structured JSON output. Started as PM2 agent-translate (id 12), relay confirmed 9 agents online. Also audited AGT-2 (code-review) and AGT-3 (data-extract) — both already running, now marked done. Next: AGT-1/4 (upgrade agent-beta) or AGT-6 (register all agents with production pricing). |
+| 2026-03-24 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (4th consecutive no-op for this task.) |
+| 2026-03-24 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers — no npm auth on this machine). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
+| 2026-03-24 | axip-test-verify (evening) | All 10 PM2 processes online (incl. new agent-translate). Relay: 8/14 agents online, 6 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. agent-translate connected cleanly — waiting for tasks. Relay logs: zero errors. No git commits today (all work was deploy/runtime). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: AGT-1/4 (upgrade agent-beta) or AGT-6 (register agents with production pricing). |
+| 2026-03-25 | axip-daily-driver | AGT-1/AGT-4 implemented: agent-beta upgraded v0.2.0 → v0.3.0 with URL-aware summarize. Added fetchPage() (HTML fetch + strip, 40K char limit, 15s timeout), detectUrl() (URL in description or natural language patterns), structured constraints.url support. Improved summarize prompt (lower temp 0.2, 768 max tokens). Pricing: summarize $0.02 → $0.03. Agent restarted clean, relay confirmed reconnect. Next: AGT-6 (register all agents with production pricing). |
+| 2026-03-25 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (5th consecutive no-op for this task.) |
+| 2026-03-25 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
+| 2026-03-26 | axip-daily-driver | AGT-6 implemented: production pricing updated for all anchor agents. web_search $0.03→$0.05, summarize $0.03→$0.05, code_review $0.05→$0.08, data_extraction $0.04→$0.05, translate $0.02→$0.04, monitor/alert $0.001→$0.002. classify/route unchanged at $0.001. All 5 agents restarted and reconnected cleanly. Pricing verified in relay DB. Week 3 anchor agent tasks now complete. Next: VPS/Week 4 setup OR fix duplicate agent entries in registry (known issue). |
+| 2026-03-26 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (6th consecutive no-op for this task.) |
+| 2026-03-26 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers — no npm auth on this machine). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
+| 2026-03-26 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/14 agents online, 12 total tasks, 6 settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: clean, "All systems initialized. Waiting for tasks." e2e smoke test passed: discover(web_search) → 2 matches at 23:08 UTC. mcp-client connected/disconnected cleanly at 23:09 UTC. AGT-6 pricing changes verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Known issue: duplicate agent entries in registry (cosmetic, non-blocking). Next: VPS/Week 4 setup OR deduplicate registry entries. |

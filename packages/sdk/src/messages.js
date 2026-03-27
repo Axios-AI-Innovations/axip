@@ -17,6 +17,8 @@ const VALID_TYPES = new Set([
   'task_request', 'task_bid', 'task_accept',
   'task_result', 'task_verify', 'task_settle',
   'heartbeat', 'capability_update',
+  'balance_request', 'balance_result',
+  'status_request', 'status_result',
   'error'
 ]);
 

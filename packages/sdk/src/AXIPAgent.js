@@ -225,6 +225,12 @@ export class AXIPAgent extends EventEmitter {
       case 'task_settle':
         this.emit('task_settle', msg);
         break;
+      case 'balance_result':
+        this.emit('balance_result', msg);
+        break;
+      case 'status_result':
+        this.emit('status_result', msg);
+        break;
       case 'error':
         this.emit('error_message', msg);
         break;
