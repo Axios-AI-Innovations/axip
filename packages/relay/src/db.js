@@ -122,6 +122,13 @@ export function initDatabase() {
     logger.info('relay-db', 'Migration: added metadata column to agents');
   }
 
+  // On startup, all agents are offline — they must re-announce to be marked online.
+  // This clears ghost entries from previous relay sessions.
+  const resetCount = db.prepare("UPDATE agents SET status = 'offline' WHERE status = 'online'").run();
+  if (resetCount.changes > 0) {
+    logger.info('relay-db', 'Reset stale online agents to offline on startup', { count: resetCount.changes });
+  }
+
   logger.info('relay-db', 'Initialized', { path: DB_PATH });
   return db;
 }

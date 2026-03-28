@@ -255,8 +255,19 @@ function _handleMessage(ws, msg, clients) {
     // ─── Agent Registration ─────────────────────────────────────
     case 'announce': {
       const result = registry.handleAnnounce(msg);
-      ws.agentId = msg.from.agent_id;
-      clients.set(msg.from.agent_id, ws);
+      const agentId = msg.from.agent_id;
+
+      // If there's already a WebSocket for this agent, close it before replacing.
+      // Prevents ghost entries where the old WS's close event later marks the new connection offline.
+      const existingWs = clients.get(agentId);
+      if (existingWs && existingWs !== ws) {
+        existingWs.agentId = null; // Prevent its close handler from marking the agent offline
+        existingWs.terminate();
+        logger.info('relay', 'Replaced stale connection for agent', { agentId });
+      }
+
+      ws.agentId = agentId;
+      clients.set(agentId, ws);
 
       // Send acknowledge
       const ack = msgLib.buildMessage('announce_ack', RELAY_IDENTITY, msg.from.agent_id, {
