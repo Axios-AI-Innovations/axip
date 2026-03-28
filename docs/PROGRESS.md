@@ -1,10 +1,143 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-03-27
+> Last updated: 2026-03-28
+
+---
+
+## Today's Implementation (2026-03-28)
+
+### Ghost Agent Cleanup: Reset stale status on startup + dedup WebSocket on re-announce
+
+**Task:** Fix duplicate "online" ghost agent entries in the relay registry.
+
+**Problem:** After relay restarts (19 restarts tracked), agents from prior sessions remained
+marked 'online' in SQLite even though their WebSocket connections were gone. This caused
+ghost entries in the dashboard and skewed agent counts. Additionally, if an agent reconnected
+with the same agent_id, the old WebSocket's close event could later mark the new connection offline.
+
+**Files changed:**
+
+`packages/relay/src/db.js`:
+- Added a startup reset: `UPDATE agents SET status = 'offline' WHERE status = 'online'`
+- Runs in `initDatabase()` right after migrations. Agents must re-announce to appear online.
+- Logged: "Reset stale online agents to offline on startup {count: N}"
+
+`packages/relay/src/server.js`:
+- In the `announce` handler, before setting `clients.set(agentId, ws)`, check if an existing
+  WebSocket is already registered for this agent_id.
+- If so, null its `agentId` (prevents its close handler from marking the agent offline) and
+  call `terminate()` to close it.
+- This prevents the race condition where an old stale WS later fires `close` and marks the
+  newly-connected agent as offline.
+
+**Verification:**
+```
+Relay restart log: "Reset stale online agents to offline on startup" {count: 10}
+/api/stats: {agents: {total: 22, online: 8}}  — all 8 are real, connected agents
+/api/agents: 8 online (translator-alpha, data-extract, code-review, mcp-client,
+             sentinel-delta, router-gamma, eli-alpha, scout-beta)
+             14 offline (historical records from past sessions — correctly marked offline)
+```
+Zero ghost online entries. All agents reconnected cleanly after restart.
+
+**SDK Integration Tests (SDK-4): All 35 tests pass**
+```
+✔ crypto (9 tests)
+✔ messages (16 tests)
+✔ AXIPAgent (10 tests)
+ℹ tests 35 | pass 35 | fail 0
+```
+
+### Recommended Next Tasks (2026-03-29)
+
+1. **SDK-5: Publish @axip/sdk to npm** — npm login needed (run `npm adduser` then `npm publish` in packages/sdk/)
+2. **MCP-7: Publish @axip/mcp-server to npm** — same, after SDK is published (update dependency from file:../sdk to version)
+3. **SDK-6: Create public GitHub repo** — MANUAL: create github.com/elibot0395/axip, push code, add README
+4. **End-to-end MCP → Claude Desktop test** — Configure Claude Desktop with axip MCP server, test axip_request_task
+5. **PAY-1: Credit ledger PostgreSQL** — Design and migrate from SQLite credit tracking to PostgreSQL
+
+---
+
+## Evening Verification (2026-03-27)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 10 processes online: axip-relay (22m uptime), hive-portal (18m uptime), agent-beta, agent-code-review, agent-data-extract, agent-delta, agent-gamma, agent-translate, eli, ollama |
+| Relay health | ✅ PASS | `/api/stats` → 8 agents online, 20 total, 7 tasks settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online: true, 8 agents, 10 capabilities active |
+| agent-beta connectivity | ✅ PASS | Recently completed summarize task ($0.05, 17s), reputation 0.622 |
+| Relay error log | ⚠️ NOTE | SyntaxError in error.log is from a prior failed startup attempt (19 restarts tracked). Current instance running cleanly — all tasks processing correctly. |
+| Duplicate agent entries | ⚠️ NOTE | eli-alpha and scout-beta appear twice in agents list — one Axios AI instance + one unknown-operator instance. Ghost entries from stale reconnects in DB. Recommend cleanup. |
+
+### What Was Implemented Today
+
+1. **AXIP MCP Server verified end-to-end** (MCP-1 through MCP-6): 4 tools (axip_discover, axip_request_task, axip_check_balance, axip_network_status) + 2 resources confirmed working against local relay.
+2. **balance_request / status_request relay handlers** (PAY-6 / MCP Fix): Added to relay server.js with full SQL queries; SDK message types and event emitters updated. MCP tools now return real data instead of timeout fallback.
+
+### Recommended Next Tasks (2026-03-28)
+
+1. **Clean up ghost agent entries** — duplicate eli-alpha and scout-beta with no operator/unknown origin cluttering the network view. Add a DB cleanup script or relay-side dedup on reconnect.
+2. **Deploy production relay** — wss://relay.axiosaiinnovations.com returns 404. All MCP docs point there; need to deploy/configure WebSocket proxy.
+3. **MCP package publish** — `@axip/mcp-server` is verified locally; publish to npm so external users can `npx @axip/mcp-server`.
+4. **End-to-end MCP → Claude integration test** — Test the full flow: Claude Desktop + MCP config → axip_request_task → real agent delivery.
+5. **Portal UI** — hive-portal serves frontend; check if dashboard reflects live agent/task data correctly.
 
 ---
 
 ## Today's Implementation (2026-03-27)
+
+### MCP-1 through MCP-6: AXIP MCP Server — Verified Working
+
+**Task:** Build, verify, and test the `@axip/mcp-server` package (Epic 4).
+
+**Status: COMPLETE — package was already scaffolded in a prior session. Verified end-to-end today.**
+
+**Package location:** `packages/mcp-server/`
+
+**What was verified:**
+
+`packages/mcp-server/bin/axip-mcp.js` — CLI entry point:
+- Parses `--relay <url>` and `--agent-name <name>` CLI args
+- Connects to AXIP relay as a client agent (no capabilities offered)
+- Uses stdio transport (`StdioServerTransport`) for MCP communication
+- Handles SIGINT/SIGTERM for graceful shutdown
+- Usage: `npx @axip/mcp-server --relay wss://relay.axiosaiinnovations.com`
+
+`packages/mcp-server/src/tools.js` — All 4 MCP tools registered:
+- `axip_discover` — finds agents by capability (with optional max_cost, min_reputation constraints)
+- `axip_request_task` — full task lifecycle: broadcast → bid → accept → result (60s timeout)
+- `axip_check_balance` — sends `balance_request` to relay, returns `balance_usd`
+- `axip_network_status` — sends `status_request`, returns agents_online, capabilities, task stats
+
+`packages/mcp-server/src/resources.js` — 2 MCP resources:
+- `axip://capabilities` — all capabilities on the network
+- `axip://leaderboard` — top 10 agents by reputation (graceful timeout if unsupported)
+
+`packages/mcp-server/src/index.js` — `createAXIPMCPServer()` factory function
+
+**Confirmed working (live test output):**
+```
+[axip-mcp] MCP server ready on stdin/stdout
+
+tools/list response: 4 tools registered
+  - axip_discover, axip_request_task, axip_check_balance, axip_network_status
+
+tools/call axip_network_status result:
+  { "agents_online": 11, "total_agents": 21,
+    "capabilities": ["alert","classify","code_review","data_extraction","monitor",
+                     "prospect_research","route","summarize","translate","web_search"],
+    "tasks_today": 0, "tasks_total": 12, "tasks_settled": 6, "total_volume_usd": 0.18 }
+
+Relay logs confirmed: "Agent registered" + "Agent reconnected" for each test connection
+```
+
+**Dependencies:** `@modelcontextprotocol/sdk` + `@axip/sdk` (file:../sdk) installed via root workspace npm install
+
+**Note:** The production relay at wss://relay.axiosaiinnovations.com returns 404 (not yet deployed/configured for WebSocket). All tests run against local relay at ws://127.0.0.1:4200 (PM2 axip-relay, confirmed 11 agents online).
+
+---
 
 ### PAY-6 / MCP Fix: balance_request + status_request Relay Handlers
 
@@ -434,5 +567,6 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-25 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
 | 2026-03-26 | axip-daily-driver | AGT-6 implemented: production pricing updated for all anchor agents. web_search $0.03→$0.05, summarize $0.03→$0.05, code_review $0.05→$0.08, data_extraction $0.04→$0.05, translate $0.02→$0.04, monitor/alert $0.001→$0.002. classify/route unchanged at $0.001. All 5 agents restarted and reconnected cleanly. Pricing verified in relay DB. Week 3 anchor agent tasks now complete. Next: VPS/Week 4 setup OR fix duplicate agent entries in registry (known issue). |
 | 2026-03-26 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (6th consecutive no-op for this task.) |
+| 2026-03-27 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (7th consecutive no-op for this task.) |
 | 2026-03-26 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers — no npm auth on this machine). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
 | 2026-03-26 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/14 agents online, 12 total tasks, 6 settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: clean, "All systems initialized. Waiting for tasks." e2e smoke test passed: discover(web_search) → 2 matches at 23:08 UTC. mcp-client connected/disconnected cleanly at 23:09 UTC. AGT-6 pricing changes verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Known issue: duplicate agent entries in registry (cosmetic, non-blocking). Next: VPS/Week 4 setup OR deduplicate registry entries. |
