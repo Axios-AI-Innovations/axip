@@ -15,6 +15,13 @@ const PLATFORM_AGENT_ID = 'axip-platform';
 const PLATFORM_FEE_RATE = 0.05;
 const PG_CONNECTION_STRING = process.env.BRAIN_DATABASE_URL || 'postgresql://localhost:5432/hive_brain';
 
+// PAY-7: Deposit bonus tiers
+// $200+ → 10% bonus, $50+ → 5% bonus, under $50 → no bonus
+const DEPOSIT_BONUS_TIERS = [
+  { threshold: 200, rate: 0.10 },
+  { threshold: 50,  rate: 0.05 },
+];
+
 let pool = null;
 let pgAvailable = false;
 
@@ -540,6 +547,128 @@ export async function refundEscrow(taskId, agentId, amount) {
   } finally {
     client.release();
   }
+}
+
+/**
+ * Calculate deposit bonus credits based on tier.
+ *
+ * Tiers: $200+ → 10%, $50+ → 5%, under $50 → 0%
+ *
+ * @param {number} amountUsd
+ * @returns {{ bonusRate: number, bonusCredits: number, totalCredits: number }}
+ */
+export function calculateDepositBonus(amountUsd) {
+  const tier = DEPOSIT_BONUS_TIERS.find(t => amountUsd >= t.threshold);
+  const bonusRate = tier?.rate ?? 0;
+  const bonusCredits = Math.round(amountUsd * bonusRate * 1_000_000) / 1_000_000;
+  const totalCredits = Math.round((amountUsd + bonusCredits) * 1_000_000) / 1_000_000;
+  return { bonusRate, bonusCredits, totalCredits };
+}
+
+/**
+ * Credit an agent's account on deposit (called after Stripe payment confirmed).
+ *
+ * Flow:
+ *   BEGIN
+ *   1. Ensure agent account exists
+ *   2. Calculate bonus credits based on deposit tier
+ *   3. Credit (amount + bonus) to agent balance
+ *   4. Record in axip_marketplace.deposits
+ *   5. Record in axip_marketplace.transactions
+ *   COMMIT
+ *
+ * @param {string} agentId
+ * @param {number} amountUsd - Amount actually paid (pre-bonus)
+ * @param {string} [stripePaymentId] - Stripe payment intent or checkout session ID
+ * @returns {Promise<{ success: boolean, balance?: number, bonusCredits?: number, totalCredited?: number, depositId?: number, error?: string }>}
+ */
+export async function deposit(agentId, amountUsd, stripePaymentId = null) {
+  const p = getPool();
+  const { bonusCredits, totalCredits } = calculateDepositBonus(amountUsd);
+
+  const client = await p.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Ensure agent account exists
+    await client.query(`
+      INSERT INTO axip_marketplace.accounts (agent_id)
+      VALUES ($1) ON CONFLICT (agent_id) DO NOTHING
+    `, [agentId]);
+
+    // Credit balance + update total_deposited
+    const credit = await client.query(`
+      UPDATE axip_marketplace.accounts
+      SET balance_usd      = balance_usd + $1,
+          total_deposited  = total_deposited + $2,
+          updated_at       = NOW()
+      WHERE agent_id = $3
+      RETURNING balance_usd
+    `, [totalCredits, amountUsd, agentId]);
+
+    const balance = parseFloat(credit.rows[0].balance_usd);
+
+    // Record in deposits table
+    const dep = await client.query(`
+      INSERT INTO axip_marketplace.deposits
+        (agent_id, amount_usd, stripe_payment_id, stripe_status, bonus_credits)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+    `, [agentId, amountUsd, stripePaymentId, stripePaymentId ? 'succeeded' : 'manual', bonusCredits]);
+
+    const depositId = dep.rows[0].id;
+
+    // Record in transactions
+    await client.query(`
+      INSERT INTO axip_marketplace.transactions
+        (task_id, from_agent, to_agent, gross_amount, platform_fee, net_amount, type, status, metadata)
+      VALUES ($1, 'external', $2, $3, 0, $3, 'deposit', 'completed', $4)
+    `, [
+      `deposit-${depositId}`,
+      agentId,
+      totalCredits,
+      JSON.stringify({ stripe_payment_id: stripePaymentId, bonus_credits: bonusCredits, amount_paid: amountUsd })
+    ]);
+
+    await client.query('COMMIT');
+
+    logger.info('pg-ledger', 'Deposit credited', {
+      agentId, amountUsd, bonusCredits, totalCredits, depositId
+    });
+
+    return { success: true, balance, bonusCredits, totalCredited: totalCredits, depositId };
+
+  } catch (err) {
+    await client.query('ROLLBACK');
+    logger.error('pg-ledger', 'Deposit failed', { agentId, amountUsd, error: err.message });
+    return { success: false, error: err.message };
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Get deposit history for an agent.
+ *
+ * @param {string} agentId
+ * @param {number} [limit=20]
+ * @returns {Promise<Array>}
+ */
+export async function getDepositHistory(agentId, limit = 20) {
+  const p = getPool();
+  const result = await p.query(`
+    SELECT id, amount_usd, bonus_credits, stripe_payment_id, stripe_status, created_at
+    FROM axip_marketplace.deposits
+    WHERE agent_id = $1
+    ORDER BY created_at DESC
+    LIMIT $2
+  `, [agentId, limit]);
+
+  return result.rows.map(row => ({
+    ...row,
+    amount_usd: parseFloat(row.amount_usd),
+    bonus_credits: parseFloat(row.bonus_credits)
+  }));
 }
 
 /**

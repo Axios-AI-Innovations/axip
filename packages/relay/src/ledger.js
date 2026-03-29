@@ -248,6 +248,52 @@ function refundSQLite(taskId, agentId, amount) {
 }
 
 /**
+ * Credit an agent account on deposit (PAY-7: includes bonus tier logic).
+ * Falls back gracefully if PostgreSQL is unavailable.
+ *
+ * @param {string} agentId
+ * @param {number} amountUsd - Amount paid
+ * @param {string} [stripePaymentId]
+ */
+export async function creditDeposit(agentId, amountUsd, stripePaymentId = null) {
+  await ensurePg();
+
+  if (pgLedger.isPgAvailable()) {
+    return pgLedger.deposit(agentId, amountUsd, stripePaymentId);
+  }
+
+  // SQLite fallback: no bonus tiers, just add the amount directly
+  const db = getDb();
+  try {
+    db.prepare('UPDATE agents SET balance = balance + ? WHERE agent_id = ?').run(amountUsd, agentId);
+    return { success: true, balance: db.prepare('SELECT balance FROM agents WHERE agent_id = ?').get(agentId)?.balance ?? 0, bonusCredits: 0, totalCredited: amountUsd };
+  } catch (err) {
+    logger.error('ledger', 'SQLite deposit failed', { error: err.message });
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Get deposit history for an agent.
+ */
+export async function getDepositHistory(agentId, limit = 20) {
+  await ensurePg();
+
+  if (pgLedger.isPgAvailable()) {
+    return pgLedger.getDepositHistory(agentId, limit);
+  }
+
+  return [];
+}
+
+/**
+ * Calculate deposit bonus without crediting (useful for displaying to users).
+ */
+export function calculateDepositBonus(amountUsd) {
+  return pgLedger.calculateDepositBonus(amountUsd);
+}
+
+/**
  * Get ledger history for an agent.
  * Returns PostgreSQL transactions if available, else SQLite ledger.
  */

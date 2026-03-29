@@ -21,7 +21,9 @@ const require = createRequire(import.meta.url);
 const pkg = require('../../package.json');
 import * as registry from '../registry.js';
 import * as taskManager from '../taskManager.js';
+import { taskEvents } from '../taskManager.js';
 import * as ledgerModule from '../ledger.js';
+const ledger = ledgerModule;
 import * as pgLedger from '../pg-ledger.js';
 import { getDb } from '../db.js';
 import * as logger from '../logger.js';
@@ -100,10 +102,38 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     }
   });
 
-  // Serve the dashboard HTML
+  // Redirect to unified dashboard at Hive Portal
   app.get('/', (req, res) => {
-    const html = readFileSync(join(__dirname, 'index.html'), 'utf-8');
-    res.type('html').send(html);
+    res.redirect('http://127.0.0.1:4202/');
+  });
+
+  // ─── SSE: Live Activity Stream ─────────────────────────────────
+
+  app.get('/api/events', (req, res) => {
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      'Connection': 'keep-alive',
+      'Access-Control-Allow-Origin': '*'
+    });
+
+    // Send initial keepalive
+    res.write(': connected\n\n');
+
+    const handler = (event) => {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    };
+    taskEvents.on('activity', handler);
+
+    // Keepalive every 30s to prevent proxy timeouts
+    const keepalive = setInterval(() => {
+      res.write(': keepalive\n\n');
+    }, 30000);
+
+    req.on('close', () => {
+      taskEvents.off('activity', handler);
+      clearInterval(keepalive);
+    });
   });
 
   // ─── Network Manifest ───────────────────────────────────────
@@ -179,6 +209,52 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     try {
       const earnings = await pgLedger.getPlatformEarnings();
       res.json(earnings);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // PAY-7: Deposit bonus preview (no auth required — used for UI price display)
+  app.get('/api/credits/deposit-preview', (req, res) => {
+    const amount = parseFloat(req.query.amount);
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ error: 'amount query param required (positive number)' });
+    }
+    const preview = ledger.calculateDepositBonus(amount);
+    res.json({
+      amount_usd: amount,
+      bonus_rate: preview.bonusRate,
+      bonus_credits: preview.bonusCredits,
+      total_credits: preview.totalCredits,
+      tiers: [
+        { threshold_usd: 200, bonus_rate: 0.10, label: '10% bonus' },
+        { threshold_usd: 50,  bonus_rate: 0.05, label: '5% bonus' },
+        { threshold_usd: 0,   bonus_rate: 0.00, label: 'No bonus' }
+      ]
+    });
+  });
+
+  // PAY-7: Manual deposit (internal/admin — for testing before Stripe is wired up)
+  app.post('/api/credits/deposit', express.json(), async (req, res) => {
+    const { agent_id, amount_usd, stripe_payment_id } = req.body || {};
+    if (!agent_id || !amount_usd || amount_usd <= 0) {
+      return res.status(400).json({ error: 'agent_id and amount_usd required' });
+    }
+    try {
+      // ledger.creditDeposit calls ensurePg() internally
+      const result = await ledger.creditDeposit(agent_id, parseFloat(amount_usd), stripe_payment_id || null);
+      if (!result.success) return res.status(400).json({ error: result.error });
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.get('/api/credits/deposits/:agentId', async (req, res) => {
+    try {
+      const limit = Math.min(parseInt(req.query.limit) || 20, 100);
+      const deposits = await ledger.getDepositHistory(req.params.agentId, limit);
+      res.json(deposits);
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
