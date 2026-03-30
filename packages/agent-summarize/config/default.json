@@ -1,0 +1,48 @@
+{
+  "instance": {
+    "id": "summarizer-alpha",
+    "name": "Summarize",
+    "version": "0.1.0"
+  },
+
+  "models": {
+    "ollama": {
+      "primary": "qwen3:14b"
+    }
+  },
+
+  "summarize": {
+    "fetch_timeout_ms": 15000,
+    "max_page_chars": 40000,
+    "max_input_chars": 16000,
+    "max_output_tokens": 768,
+    "temperature": 0.2
+  },
+
+  "budget": {
+    "warning_threshold_usd": 0,
+    "hard_cap_usd": 0,
+    "period": "monthly"
+  },
+
+  "axip": {
+    "relay_url": "ws://127.0.0.1:4200",
+    "agent_name": "summarizer-alpha",
+    "capabilities": ["summarize"],
+    "pricing": {
+      "summarize": { "base_usd": 0.03 }
+    },
+    "bidding": {
+      "auto_bid": true,
+      "max_concurrent_tasks": 3,
+      "default_eta_seconds": 20,
+      "default_confidence": 0.90
+    },
+    "metadata": {
+      "operator": "Axios AI Innovations",
+      "mission_aligned": true,
+      "node_type": "core",
+      "runtime": "ollama/qwen3:14b"
+    }
+  }
+}

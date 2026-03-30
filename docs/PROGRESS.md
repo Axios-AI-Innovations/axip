@@ -1,6 +1,284 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-03-28
+> Last updated: 2026-03-30
+
+---
+
+## Scheduled Task Run (2026-03-30): axip-daily-driver
+
+**Task:** AGT-4 — Build dedicated summarize agent
+
+**Result: Complete. `agent-summarize` (summarizer-alpha) is live on AXIP relay.**
+
+### What Was Implemented
+
+**New package: `packages/agent-summarize/`**
+
+| File | Description |
+|------|-------------|
+| `package.json` | `@axip/agent-summarize` v0.1.0 — deps: sdk, sqlite, chalk, dotenv, ollama |
+| `config/default.json` | `summarizer-alpha`, capability: `summarize`, price $0.03, model qwen3:14b |
+| `src/index.js` | Main agent: boots, health-checks Ollama, connects to relay, handles tasks |
+| `src/db.js` | SQLite for cost tracking (`data/summarize.db`) |
+| `src/cost-tracker.js` | Logs LLM calls (all $0 local) to DB |
+| `src/router.js` | Single-tier passthrough to Ollama |
+| `src/llm/ollama.js` | Ollama chat client with 90s timeout, trackCall integration |
+| `src/skills/summarize.js` | URL-aware summarization: fetch page → LLM → SUMMARY + KEY POINTS |
+
+### Verification
+
+| Check | Result |
+|-------|--------|
+| PM2 start | ✅ `agent-summarize` online, PID 15984, 0 restarts |
+| Relay registration | ✅ `summarizer-alpha-1dnH79cI` online with `summarize` capability at $0.03 |
+| Ollama model | ✅ `qwen3:14b` healthy |
+| DB initialized | ✅ `data/summarize.db` created |
+| PM2 save | ✅ Process list saved |
+
+### Recommended Next Tasks (2026-03-31)
+
+1. **AGT-1: Upgrade agent-beta (web_search)** — now that summarize is its own agent, consider removing `summarize` from scout-beta's capabilities list to avoid dual-bidding
+2. **PAY-2/3/4 (Stripe)** → BLOCKED on `STRIPE_SECRET_KEY` (Elias to add to .env)
+3. **PAY-9: Refund flow** — handle failed tasks with credit refund
+4. **PAY-6: Balance/transaction API endpoints** — for dashboard
+5. **SDK-5/MCP-7** → MANUAL — `npm publish` requires npm auth (Elias)
+
+### Manual Actions Needed
+
+- **PAY-2/3/4**: Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` to `~/axios-axip/.env` to unblock Stripe integration
+- **SDK-5**: Run `npm publish` in `packages/sdk/`
+- **MCP-7**: Run `npm publish` in `packages/mcp-server/`
+
+---
+
+## Evening Verification (2026-03-29)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 10 processes online: axip-relay (11h), hive-portal (2D), agent-beta/code-review/data-extract/delta/gamma/translate, eli, ollama |
+| Relay health | ✅ PASS | `/api/stats` → 8/20 agents online, 14 tasks total, 7 settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online: true, 8 agents, 10 capabilities |
+| PAY-7 deposit-preview endpoint | ✅ PASS | `$75 → 5% bonus ($3.75), total $78.75` — correct on port 4201 |
+| PAY-7 deposit history endpoint | ✅ PASS | test-deposit-agent shows 1 deposit record ($75, 2026-03-29) |
+| PAY-7 bonus tiers | ✅ PASS | $25→0%, $75→5%, $200→10% — all tiers verified |
+| Relay error log | ✅ PASS | EMPTY — zero errors |
+| agent-beta connectivity | ⚠️ WARN | scout-beta online in relay; agent-beta PM2 logs show repeated "Disconnected from relay" (reconnect loop) |
+| mcp-client reconnect loop | ⚠️ WARN | mcp-client reconnecting every ~1s — stale scheduled task or test runner leaving connection open |
+
+### Issues Found
+
+1. **agent-beta reconnect loop**: PM2 logs show repeated "Disconnected from relay" lines, though scout-beta appears online in relay. May be PM2 process cycling between connect/disconnect. Not causing errors.
+
+2. **mcp-client rapid reconnect**: Relay logs show mcp-client connecting and being replaced every second (~01:53 UTC). Likely a scheduled task or automated test holding a loop open. No impact on other agents but causes log noise.
+
+### What Was Implemented Today (2026-03-29)
+
+1. **PAY-7: Deposit bonus tiers** — `pg-ledger.js`, `ledger.js`, `relay/src/dashboard/server.js`
+   - `calculateDepositBonus()` — $50 threshold = 5%, $200 threshold = 10%
+   - `deposit()` — atomic credit + bonus, records in deposits + transactions tables
+   - `getDepositHistory()` — per-agent deposit history
+   - 3 new dashboard endpoints: `/api/credits/deposit-preview`, `/api/credits/deposit`, `/api/credits/deposits/:agentId`
+
+2. **MCP Server re-verified** — all MCP-1 through MCP-6 confirmed working, CLI logging order fixed
+
+3. **SDK TypeScript types re-verified** — SDK-1/2/3 confirmed complete, no changes needed
+
+### Recommended Next Tasks (2026-03-30)
+
+1. **AGT-1: Upgrade agent-beta (web_search)** — review webSearch.js for retry logic, error handling, result quality
+2. **AGT-4: Build dedicated summarize agent** — separate from scout-beta
+3. **Investigate mcp-client reconnect loop** — find what process is cycling (check scheduled tasks)
+4. **PAY-2/3/4 (Stripe)** → BLOCKED on `STRIPE_SECRET_KEY` (Elias to add to .env)
+5. **SDK-5/MCP-7** → MANUAL — `npm publish` requires npm auth (Elias)
+
+---
+
+## Scheduled Task Run (2026-03-29): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package
+
+**Result: All tasks already complete — verified and connection-tested.**
+
+| Task | Status | Details |
+|------|--------|---------|
+| MCP-1 (Package scaffold) | ✅ Already done | `packages/mcp-server/` — package.json with `@axip/mcp-server` name, bin entry, `@modelcontextprotocol/sdk` + `@axip/sdk` deps |
+| MCP-2 (axip_discover_agents) | ✅ Already done | `src/tools.js` — discover by capability, max_cost, min_reputation |
+| MCP-3 (axip_request_task) | ✅ Already done | `src/tools.js` — full lifecycle: task_request → bid → accept → result, 60s timeout |
+| MCP-4 (axip_check_balance) | ✅ Already done | `src/tools.js` — sends balance_request to relay, 5s timeout |
+| MCP-5 (axip_network_status) | ✅ Already done | `src/tools.js` — sends status_request to relay |
+| MCP-6 (network_capabilities resource) | ✅ Already done | `src/resources.js` — `axip://capabilities` + `axip://leaderboard` MCP resources |
+
+### What Was Fixed
+
+- **CLI logging order**: `bin/axip-mcp.js` — `Connected to AXIP relay` log now appears immediately after `createAXIPMCPServer()` returns (before that, the `connected` event fired inside `start()` before the handler was registered, so the message never appeared)
+
+### Local Test Results
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+[axip-mcp] Connected to AXIP relay
+[axip-mcp] MCP server ready on stdin/stdout
+```
+
+Relay confirmed: `Agent reconnected — agentId: mcp-client-xnI17BtK` ✅
+
+### MANUAL Tasks Still Pending (need Elias)
+
+- **MCP-7**: `npm publish @axip/mcp-server` in `packages/mcp-server/`
+
+---
+
+## Scheduled Task Run (2026-03-29): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json updates, quickstart README
+
+**Result: All tasks already complete — no changes needed.**
+
+| Task | Status | Details |
+|------|--------|---------|
+| SDK-1 (TypeScript type definitions) | ✅ Already done | `packages/sdk/src/index.d.ts` — full types for AXIPAgent, AXIPConnection, all message payloads, crypto namespace |
+| SDK-2 (package.json updates) | ✅ Already done | `files`, `engines`, `types`, `license`, `repository`, `description` all present |
+| SDK-3 (quickstart README) | ✅ Already done | `packages/sdk/README.md` — install, 25-line quickstart, docs links |
+
+No implementation was needed. All SDK publishing prep work was completed in a prior run.
+
+---
+
+## Scheduled Task Run (2026-03-29): axip-daily-driver
+
+**Task:** PAY-7 — Deposit bonus tiers ($50=5%, $200=10%)
+
+**Result: Complete. Deposit API with bonus tiers implemented and tested.**
+
+### What Was Found Already Done (Week 2 + Week 3 so far)
+
+| Task | Status |
+|------|--------|
+| SDK-1,2,3,4 | ✅ Done |
+| SDK-5, SDK-6, MCP-7 | ⏭️ MANUAL — requires npm auth + GitHub |
+| MCP-1 through MCP-6 | ✅ Done |
+| MCP-8 (OpenClaw guide) | ✅ Done — `docs/integrations/openclaw.md` |
+| MCP-9 (LangChain guide) | ✅ Done — `docs/integrations/langchain.md` |
+| PAY-1 (PostgreSQL credit ledger schema) | ✅ Done — schema + pg-ledger.js already existed |
+| PAY-5 (5% platform fee) | ✅ Done — in pg-ledger settle() |
+| PAY-6 (Balance/transaction API) | ✅ Done — in dashboard/server.js |
+| PAY-8 (Spending limits) | ✅ Done — in pg-ledger |
+| PAY-9 (Refund flow) | ✅ Done — refundEscrow() in pg-ledger |
+
+### What Was Implemented Today
+
+**PAY-7: Deposit bonus tiers** — `pg-ledger.js`, `ledger.js`, `dashboard/server.js`
+
+- `calculateDepositBonus(amountUsd)` — returns bonusRate, bonusCredits, totalCredits
+- `deposit(agentId, amountUsd, stripePaymentId)` — atomic credit with bonus; records in deposits + transactions tables
+- `getDepositHistory(agentId, limit)` — deposit history per agent
+- Wrapper functions in ledger.js: `creditDeposit()`, `getDepositHistory()`, `calculateDepositBonus()`
+- Three new dashboard endpoints:
+  - `GET /api/credits/deposit-preview?amount=N` — tier preview (no auth, for UI)
+  - `POST /api/credits/deposit` — credit an account (admin/internal, ready for Stripe webhook)
+  - `GET /api/credits/deposits/:agentId` — deposit history
+
+**Verified (tests after restart):**
+- $25 → 0% bonus, $75 → 5% bonus ($3.75), $200 → 10% bonus ($20)
+- POST deposit: test-deposit-agent got $78.75 total on $75 deposit ✅
+- Deposit history + balance endpoints returning correct data ✅
+- No relay errors after restart, all 8 agents reconnected ✅
+
+### MANUAL Tasks Still Pending (need Elias)
+
+1. **SDK-5**: `npm publish @axip/sdk` in `packages/sdk/`
+2. **MCP-7**: `npm publish @axip/mcp-server` in `packages/mcp-server/`
+3. **SDK-6**: Create public GitHub repo `github.com/axiosai/axip`, push code
+4. **PAY-2**: Stripe Connect Express account setup (need `STRIPE_SECRET_KEY` in `.env`)
+5. **PAY-3**: Stripe Checkout session for credit deposits (needs Stripe keys + webhook URL)
+
+### Recommended Next Tasks (2026-03-30)
+
+1. **AGT-1: Upgrade Agent Beta (web_search)** — Review webSearch.js for production reliability (retry logic, error handling, result quality)
+2. **AGT-4: Build dedicated summarize agent** — Standalone summarize agent separate from scout-beta
+3. **PAY-7 deposit bonus tiers** → ✅ done today
+4. **PAY-2/3/4 (Stripe)** → BLOCKED on STRIPE_SECRET_KEY env var (Elias to add)
+
+---
+
+## Evening Verification (2026-03-28)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 10 processes online: axip-relay (11h uptime), hive-portal (24h), agent-beta, agent-code-review, agent-data-extract, agent-delta, agent-gamma, agent-translate, eli, ollama |
+| Relay health | ✅ PASS | `/api/stats` → 8/20 agents online, 14 tasks total, 7 settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online: true, 8 agents, 10 capabilities: translate, data_extraction, code_review, monitor, alert, classify, route, prospect_research, web_search, summarize |
+| agent-beta (scout-beta) connectivity | ✅ PASS | scout-beta online in relay, reputation 0.622 |
+| Relay error log | ✅ PASS | EMPTY — zero errors |
+| Ghost agent fix verification | ✅ PASS | 8 real online agents, 14 correctly marked offline (stale historical records) — ghost cleanup working |
+| e2e smoke test | ✅ PASS | discover(web_search) → 1 match at 23:09 UTC; e2e-tester connected + disconnected cleanly |
+
+### What Was Implemented Today
+
+1. **Ghost agent cleanup** (relay startup): `db.js` now resets all stale 'online' agents to 'offline' on startup. `server.js` deduplicates WebSocket on re-announce — terminates old WS before registering new one (prevents race condition where stale close event marks newly-connected agent offline).
+2. **SDK-4 re-verified**: All 35 integration tests passing (crypto 9/9, messages 16/16, AXIPAgent 10/10).
+
+### Recommended Next Tasks (2026-03-29)
+
+1. **SDK-5: Publish @axip/sdk to npm** — `npm adduser` then `npm publish` in packages/sdk/ (MANUAL — requires npm auth)
+2. **MCP-7: Publish @axip/mcp-server to npm** — after SDK-5 published (MANUAL)
+3. **SDK-6: Create public GitHub repo** — github.com/axiosai/axip, push code (MANUAL)
+4. **End-to-end MCP → Claude Desktop test** — Configure Claude Desktop with axip MCP server, test axip_request_task against a live agent
+5. **PAY-1: Credit ledger PostgreSQL** — Migrate credit tracking from SQLite to PostgreSQL for production readiness
+
+---
+
+## Scheduled Task Run (2026-03-28): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 (MCP server package scaffold, all tools, resource, CLI entry point)
+
+**Result: All tasks already complete — verified working against local relay. No changes needed.**
+
+| Task | Status | Details |
+|------|--------|---------|
+| MCP-1 | ✅ Already done | `packages/mcp-server/` — package.json with `@axip/mcp-server`, bin entry, `@modelcontextprotocol/sdk` + `@axip/sdk` + `zod` deps |
+| MCP-2 | ✅ Already done | `axip_discover_agents` (named `axip_discover`) in `src/tools.js` — capability + max_cost + min_reputation inputs |
+| MCP-3 | ✅ Already done | `axip_request_task` in `src/tools.js` — full lifecycle: broadcast → bid → accept → result, 60s timeout |
+| MCP-4 | ✅ Already done | `axip_check_balance` in `src/tools.js` — sends balance_request to relay |
+| MCP-5 | ✅ Already done | `axip_network_status` in `src/tools.js` — sends status_request, returns agents/capabilities/stats |
+| MCP-6 | ✅ Already done | `axip://capabilities` resource in `src/resources.js` + bonus `axip://leaderboard` resource |
+
+**Local connection test:**
+```
+node packages/mcp-server/bin/axip-mcp.js --relay ws://127.0.0.1:4200
+→ [axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+→ [axip-mcp] MCP server ready on stdin/stdout
+
+Relay logs confirmed:
+→ "Agent reconnected" {agentId: "mcp-client-xnI17BtK", balance: 1, reputation: 0.5}
+```
+
+MCP server connects to relay, announces, and is recognized. Relay at 8 agents online, 7 tasks settled.
+
+**Recommended Next Tasks (2026-03-29):**
+1. **SDK-5 + MCP-7: Publish to npm** — `npm adduser` then `npm publish` in packages/sdk/ and packages/mcp-server/
+2. **End-to-end MCP → Claude Desktop test** — Add to `~/Library/Application Support/Claude/claude_desktop_config.json`
+3. **Production relay deploy** — wss://relay.axiosaiinnovations.com still returns 404; all quickstart docs point there
+
+---
+
+## Scheduled Task Run (2026-03-28): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 (TypeScript types, package.json metadata, quickstart README)
+
+**Result: All three tasks already complete — no changes needed.**
+
+| Task | Status | Details |
+|------|--------|---------|
+| SDK-1 | ✅ Already done | `packages/sdk/src/index.d.ts` — 527 lines, full types for AXIPAgent, AXIPConnection, all message payloads, crypto functions |
+| SDK-2 | ✅ Already done | `package.json` has `files`, `engines`, `types`, `license`, `repository`, `description` |
+| SDK-3 | ✅ Already done | `README.md` has install, 25-line quickstart (connect, discover, request), docs link |
+
+No files modified. Next SDK tasks: SDK-5 (npm publish) and SDK-6 (public GitHub repo) require manual steps.
 
 ---
 
@@ -570,3 +848,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-27 | axip-sdk-typescript | No-op: SDK-1 (index.d.ts), SDK-2 (package.json), SDK-3 (README.md) all already complete from 2026-03-21 run. No code changes needed. (7th consecutive no-op for this task.) |
 | 2026-03-26 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers — no npm auth on this machine). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
 | 2026-03-26 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/14 agents online, 12 total tasks, 6 settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: clean, "All systems initialized. Waiting for tasks." e2e smoke test passed: discover(web_search) → 2 matches at 23:08 UTC. mcp-client connected/disconnected cleanly at 23:09 UTC. AGT-6 pricing changes verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Known issue: duplicate agent entries in registry (cosmetic, non-blocking). Next: VPS/Week 4 setup OR deduplicate registry entries. |
+| 2026-03-28 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/20 agents online (ghost fix working — 14 correctly offline), 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities. Relay error log: EMPTY. e2e smoke test: discover(web_search) → 1 match at 23:09 UTC ✅. Ghost cleanup verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: SDK-5 npm publish, MCP → Claude Desktop e2e test, PAY-1 PostgreSQL ledger. |
