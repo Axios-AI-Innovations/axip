@@ -148,6 +148,7 @@ function _wireEventHandlers() {
     activeTasks.set(taskId, {
       capability,
       description: msg.payload.description,
+      constraints: msg.payload.constraints || {},
       requesterId: msg.from.agent_id,
       bidId: bidMsg.payload.bid_id,
       startTime: Date.now()
@@ -168,23 +169,38 @@ function _wireEventHandlers() {
 
     console.log(`${PREFIX} ${chalk.green('✓')} Task accepted! Working on ${taskId.slice(0, 16)}...`);
 
+    const TASK_TIMEOUT_MS = 60000; // 60s hard limit per task
+
     try {
       let output;
       const startTime = Date.now();
 
-      if (taskInfo.capability === 'web_search') {
-        console.log(`${PREFIX} ${chalk.gray('…')} Searching: "${taskInfo.description}"`);
-        output = await webSearch(taskInfo.description);
-        console.log(`${PREFIX} ${chalk.gray('…')} Found ${output.results.length} results${output.cached ? ' (cached)' : ''}`);
+      const taskWork = async () => {
+        if (taskInfo.capability === 'web_search') {
+          console.log(`${PREFIX} ${chalk.gray('…')} Searching: "${taskInfo.description}"`);
+          const result = await webSearch(taskInfo.description);
+          console.log(`${PREFIX} ${chalk.gray('…')} Found ${result.results.length} results${result.cached ? ' (cached)' : ''}`);
+          return result;
 
-      } else if (taskInfo.capability === 'summarize') {
-        console.log(`${PREFIX} ${chalk.gray('…')} Summarizing text (${taskInfo.description.length} chars)`);
-        output = await summarize(taskInfo.description);
-        console.log(`${PREFIX} ${chalk.gray('…')} Summary: ${output.summary_length} words from ${output.original_length}`);
+        } else if (taskInfo.capability === 'summarize') {
+          const hasUrl = taskInfo.constraints?.url || /^https?:\/\//i.test(taskInfo.description.trim());
+          console.log(`${PREFIX} ${chalk.gray('…')} Summarizing${hasUrl ? ' URL' : ' text'} (${taskInfo.description.length} chars)`);
+          const result = await summarize(taskInfo.description, taskInfo.constraints);
+          console.log(`${PREFIX} ${chalk.gray('…')} Summary: ${result.summary_length} words from ${result.original_length}${result.source_url ? ` [${result.source_url.slice(0, 50)}]` : ''}`);
+          return result;
 
-      } else {
-        output = { error: `Unknown capability: ${taskInfo.capability}` };
-      }
+        } else {
+          return { error: `Unknown capability: ${taskInfo.capability}` };
+        }
+      };
+
+      // Race task execution against hard timeout
+      output = await Promise.race([
+        taskWork(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(`Task timeout after ${TASK_TIMEOUT_MS / 1000}s`)), TASK_TIMEOUT_MS)
+        )
+      ]);
 
       const actualTime = Math.round((Date.now() - startTime) / 1000);
       const model = config.models?.ollama?.primary || 'qwen3:8b';

@@ -87,19 +87,23 @@ export async function webSearch(query) {
   // ── Step 2: Process (LLM summarization + relevance scoring) ──
   const processedResults = await process(query, rawResults);
 
-  // ── Step 3: Cache results ────────────────────────────────────
-  cacheResults(queryHash, normalizedQuery, processedResults);
+  // ── Step 3: Post-process results ────────────────────────────
+  // Filter out very low-relevance results, deduplicate by domain, sort by relevance
+  const refinedResults = postProcess(processedResults);
+
+  // ── Step 4: Cache results ────────────────────────────────────
+  cacheResults(queryHash, normalizedQuery, refinedResults);
 
   const durationMs = Date.now() - startTime;
-  const confidence = processedResults.length > 0
-    ? processedResults.reduce((sum, r) => sum + (r.relevance || 0.5), 0) / processedResults.length
+  const confidence = refinedResults.length > 0
+    ? refinedResults.reduce((sum, r) => sum + (r.relevance || 0.5), 0) / refinedResults.length
     : 0;
-  console.log(`[web-search] Complete: ${processedResults.length} results in ${durationMs}ms (confidence: ${confidence.toFixed(2)})`);
+  console.log(`[web-search] Complete: ${refinedResults.length} results in ${durationMs}ms (confidence: ${confidence.toFixed(2)})`);
 
   return {
     query,
-    results: processedResults,
-    total_results: processedResults.length,
+    results: refinedResults,
+    total_results: refinedResults.length,
     search_duration_ms: durationMs,
     confidence: Math.round(confidence * 100) / 100,
     cached: false
@@ -323,6 +327,45 @@ function parseLLMSummaries(text, expectedCount) {
     console.warn(`[web-search] Failed to parse LLM JSON: ${err.message}`);
     return [];
   }
+}
+
+/**
+ * Post-process LLM-scored results:
+ * - Filter results with relevance < 0.25 (clearly off-topic)
+ * - Deduplicate by domain (keep highest-relevance result per domain)
+ * - Sort by relevance descending
+ *
+ * Falls back gracefully: if all filtered out, returns original sorted.
+ *
+ * @param {Array<{ title, url, summary, relevance }>} results
+ * @returns {Array<{ title, url, summary, relevance }>}
+ */
+function postProcess(results) {
+  if (results.length === 0) return results;
+
+  // Deduplicate by domain — keep highest relevance per domain
+  const seen = new Map();
+  for (const r of results) {
+    let domain = r.url;
+    try {
+      domain = new URL(r.url).hostname.replace(/^www\./, '');
+    } catch { /* use raw url as key */ }
+    const existing = seen.get(domain);
+    if (!existing || r.relevance > existing.relevance) {
+      seen.set(domain, r);
+    }
+  }
+  const deduped = Array.from(seen.values());
+
+  // Filter low-relevance results
+  const MIN_RELEVANCE = 0.25;
+  const filtered = deduped.filter(r => r.relevance >= MIN_RELEVANCE);
+
+  // If filtering removed everything, keep originals (safety fallback)
+  const final = filtered.length > 0 ? filtered : deduped;
+
+  // Sort by relevance descending
+  return final.sort((a, b) => b.relevance - a.relevance);
 }
 
 /**

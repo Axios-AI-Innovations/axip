@@ -2,7 +2,7 @@
   "instance": {
     "id": "scout-beta",
     "name": "Beta",
-    "version": "0.2.0"
+    "version": "0.3.0"
   },
 
   "models": {
@@ -19,8 +19,10 @@
 
   "summarize": {
     "max_input_tokens": 4000,
-    "max_output_tokens": 512,
-    "temperature": 0.3
+    "max_output_tokens": 768,
+    "temperature": 0.2,
+    "fetch_timeout_ms": 15000,
+    "max_page_chars": 40000
   },
 
   "budget": {
@@ -34,13 +36,13 @@
     "agent_name": "scout-beta",
     "capabilities": ["web_search", "summarize"],
     "pricing": {
-      "web_search": { "base_usd": 0.03 },
-      "summarize": { "base_usd": 0.02 }
+      "web_search": { "base_usd": 0.05 },
+      "summarize": { "base_usd": 0.05 }
     },
     "bidding": {
       "auto_bid": true,
       "max_concurrent_tasks": 5,
-      "default_eta_seconds": 15,
+      "default_eta_seconds": 30,
       "default_confidence": 0.90
     },
     "metadata": {
