@@ -260,6 +260,63 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     }
   });
 
+  // PAY-8: Spending limits — GET current limit + 24h spend
+  app.get('/api/credits/spending-limit/:agentId', async (req, res) => {
+    if (!pgLedger.isPgAvailable()) {
+      return res.status(503).json({ error: 'PostgreSQL credit system unavailable' });
+    }
+    try {
+      const [account, limitCheck] = await Promise.all([
+        pgLedger.getBalance(req.params.agentId),
+        pgLedger.checkSpendingLimit(req.params.agentId)
+      ]);
+      if (!account) return res.status(404).json({ error: 'Agent account not found' });
+      res.json({
+        agent_id: req.params.agentId,
+        spending_limit_usd: account.spending_limit_usd,
+        spent_24h_usd: limitCheck.spent24h,
+        remaining_usd: account.spending_limit_usd != null
+          ? Math.max(0, account.spending_limit_usd - limitCheck.spent24h)
+          : null,
+        limit_exceeded: limitCheck.exceeded
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // PAY-8: Set spending limit for an agent (null to remove limit)
+  app.put('/api/credits/spending-limit/:agentId', express.json(), async (req, res) => {
+    if (!pgLedger.isPgAvailable()) {
+      return res.status(503).json({ error: 'PostgreSQL credit system unavailable' });
+    }
+    const { limit_usd } = req.body || {};
+    if (limit_usd !== null && limit_usd !== undefined) {
+      const parsed = parseFloat(limit_usd);
+      if (isNaN(parsed) || parsed < 0) {
+        return res.status(400).json({ error: 'limit_usd must be a positive number or null to remove limit' });
+      }
+      if (parsed > 10000) {
+        return res.status(400).json({ error: 'limit_usd cannot exceed $10,000/day' });
+      }
+    }
+    try {
+      const agentId = req.params.agentId;
+      const account = await pgLedger.getBalance(agentId);
+      if (!account) return res.status(404).json({ error: 'Agent account not found' });
+      const newLimit = limit_usd === null ? null : parseFloat(limit_usd);
+      await pgLedger.setSpendingLimit(agentId, newLimit);
+      logger.info('dashboard', 'Spending limit updated', { agentId, newLimit });
+      res.json({
+        agent_id: agentId,
+        spending_limit_usd: newLimit,
+        message: newLimit === null ? 'Spending limit removed' : `Spending limit set to $${newLimit.toFixed(2)}/day`
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/stats', (req, res) => {
     try {
       const db = getDb();

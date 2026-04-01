@@ -18,6 +18,7 @@ import { initDatabase, closeDatabase } from './db.js';
 import { createRelayServer } from './server.js';
 import * as taskManager from './taskManager.js';
 import { startDashboard } from './dashboard/server.js';
+import * as pgLedger from './pg-ledger.js';
 import * as logger from './logger.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -70,7 +71,14 @@ async function main() {
     process.exit(1);
   }
 
-  // 3. Dashboard (non-fatal)
+  // 3. PostgreSQL credit ledger (non-fatal — falls back to SQLite)
+  try {
+    await pgLedger.initPgLedger();
+  } catch (err) {
+    logger.warn('relay', 'pg-ledger init error (SQLite fallback active)', { error: err.message });
+  }
+
+  // 4. Dashboard (non-fatal)
   try {
     startDashboard(DASH_PORT, DASH_HOST, manifest);
     logger.info('relay', 'Admin dashboard online', { url: `http://${DASH_HOST}:${DASH_PORT}` });
