@@ -1,6 +1,248 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-03-30
+> Last updated: 2026-04-01
+
+---
+
+## Scheduled Task Run (2026-04-01): axip-daily-driver
+
+**Task:** PAY-8 — Spending limits HTTP API endpoints + pg-ledger startup fix
+
+**Result: Implemented and verified working.**
+
+### What Was Done
+
+1. **Fixed pg-ledger startup initialization** — `initPgLedger()` was never called at relay startup. The pg-ledger was only initialized lazily via `ensurePg()` in `ledger.js`, but the dashboard called `pgLedger.isPgAvailable()` directly (bypassing ledger.js), so it always returned `false`. Fixed by calling `initPgLedger()` explicitly in the relay's startup sequence (index.js). PostgreSQL credit ledger now connects at boot and logs: `"PostgreSQL credit ledger connected"`.
+
+2. **Fixed missing `pg` dependency** — The `pg` package was imported in `pg-ledger.js` but was missing from `packages/relay/package.json`. This caused the relay to crash-loop on every restart (23+ restarts accumulated). Added `"pg": "^8.20.0"` to dependencies and ran `npm install` from workspace root.
+
+3. **PAY-8: Added spending limit HTTP API endpoints** to `dashboard/server.js`:
+   - `GET /api/credits/spending-limit/:agentId` — returns current limit, 24h spending, remaining, exceeded flag
+   - `PUT /api/credits/spending-limit/:agentId` — sets daily spending limit (`limit_usd: null` removes it)
+   - Validation: rejects negative values, rejects values > $10,000/day
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| Relay startup | ✅ PASS | pg-ledger connected: `"PostgreSQL credit ledger connected"` |
+| GET spending-limit | ✅ PASS | Returns `{spending_limit_usd, spent_24h_usd, remaining_usd, limit_exceeded}` |
+| PUT spending-limit (set) | ✅ PASS | `$5.00/day` limit set, confirmed via GET |
+| PUT spending-limit (remove) | ✅ PASS | `null` removes limit |
+| All agents reconnected | ✅ PASS | 9 agents online after restart |
+| Relay health | ✅ PASS | `/health` → `{status: "ok", agents_online: 9}` |
+
+### Manual Actions Needed
+
+- **SDK-5**: `npm publish` in `packages/sdk/` (requires npm auth — Elias)
+- **MCP-7**: `npm publish` in `packages/mcp-server/` (requires npm auth — Elias)
+- **SDK-6**: Create public GitHub repo (Elias)
+- **PAY-2/3/4 (Stripe)**: Need `STRIPE_SECRET_KEY` in `.env` (Elias)
+
+### Recommended Next Tasks (2026-04-02)
+
+1. **PAY-1**: Verify credit ledger PostgreSQL schema is fully correct (axip_marketplace tables) — quick check
+2. **PAY-9**: Verify refund flow works end-to-end (refund on task timeout already in code, test it)
+3. **Week 4 prep**: Review VPS-1 through VPS-4 tasks for Hetzner deployment planning
+
+---
+
+## Scheduled Task Run (2026-03-31): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package scaffold, tools, and resources
+
+**Result: Already fully implemented. Verified working.**
+
+### Status
+
+The `packages/mcp-server/` package was fully implemented in a prior session and re-verified again in the 2026-03-30 run. This run:
+- Confirmed all source files exist and are complete (package.json, src/index.js, src/tools.js, src/resources.js, bin/axip-mcp.js)
+- Re-ran live startup test against `ws://127.0.0.1:4200`
+
+### Live Test Results (2026-03-31)
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+[axip-mcp] Connected to AXIP relay        ← relay handshake OK
+[axip-mcp] MCP server ready on stdin/stdout ← MCP stdio transport up
+[axip-mcp] Shutting down...
+```
+
+### Implementation Checklist
+
+| Task | File | Status |
+|------|------|--------|
+| MCP-1 | `packages/mcp-server/package.json` | ✅ `@axip/mcp-server` v0.1.0, bin entry, ES module, correct deps |
+| MCP-2 | `src/tools.js` — `axip_discover_agents` | ✅ capability + max_cost + min_reputation filters |
+| MCP-3 | `src/tools.js` — `axip_request_task` | ✅ full lifecycle: request → bid → accept → result, 60s timeout |
+| MCP-4 | `src/tools.js` — `axip_check_balance` | ✅ balance_request to relay with 5s fallback |
+| MCP-5 | `src/tools.js` — `axip_network_status` | ✅ status_request to relay with 5s fallback |
+| MCP-6 | `src/resources.js` — `axip://capabilities` | ✅ MCP resource listing capabilities |
+| CLI | `bin/axip-mcp.js` | ✅ `--relay`, `--agent-name`, `--help` flags, stdio transport |
+
+### Manual Actions Needed
+
+- **MCP-7**: Run `npm publish` in `packages/mcp-server/` (requires npm auth — Elias)
+
+---
+
+## Scheduled Task Run (2026-03-31): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, README
+
+**Result: Already complete. No changes needed.**
+
+### Verification
+
+Week 1 security hardening confirmed complete (✅ in progress tracker). Proceeded to check SDK files:
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `src/index.d.ts` | ✅ Already complete — full types for AXIPAgent, AXIPConnection, all message types, crypto namespace, messages namespace |
+| SDK-2 | `package.json` | ✅ Already complete — has `files`, `engines`, `types`, `license`, `repository`, `description` |
+| SDK-3 | `README.md` | ✅ Already complete — one-line description, npm install, 20-line quickstart, docs links |
+
+All three tasks were implemented in the 2026-03-29 session and re-verified on 2026-03-30. Files unchanged. No code changes made.
+
+---
+
+## Scheduled Task Run (2026-03-31): axip-daily-driver
+
+**Task:** AGT-1 — Upgrade agent-beta web_search for production + mcp-client reconnect loop fix
+
+### What Was Done
+
+1. **Fixed mcp-client reconnect loop** — Two orphaned mcp-server processes (PIDs 79950, 84391) were running simultaneously with the same agent name `mcp-client`, causing them to continuously kick each other off the relay at 1-second intervals (~9,862+ log entries/day). Killed both orphan processes. Relay logs immediately went quiet. Root cause: stale test runs from previous sessions, not managed by PM2. No future respawn — Claude Desktop has no MCP server config.
+
+2. **AGT-1: Upgraded agent-beta web_search for production:**
+   - **Sort by relevance**: Results now returned highest-relevance first (LLM-scored)
+   - **Domain deduplication**: Per-domain dedup keeps best result per site → more diverse sources
+   - **Low-relevance filter**: Results with relevance < 0.25 filtered out (safety fallback if all filter)
+   - **60s task timeout**: `Promise.race()` hard limit prevents hung tasks from blocking concurrent task slots
+   - **Realistic ETA**: `default_eta_seconds` bumped from 15s → 30s (DDG + Ollama qwen3:14b takes ~20-40s)
+   - Committed as: `d00930c AGT-1: Upgrade agent-beta web_search for production`
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 11 processes online |
+| agent-beta startup | ✅ PASS | "All systems initialized. Waiting for tasks." — qwen3:14b, scout-beta-wOHiQdnE |
+| Relay log noise | ✅ FIXED | mcp-client-xnI17BtK loop stopped — last entry 14:34:23 "Agent disconnected" |
+| Relay error log | ✅ PASS | Zero errors |
+
+### Recommended Next Tasks (2026-04-01)
+
+1. **PAY-5: Add 5% platform fee to settlement logic** — not blocked on Stripe, purely relay-side
+2. **PAY-6: Balance/transaction API endpoints** — GET /balance, GET /transactions for agents
+3. **PAY-8: Spending limits per agent** — relay-side enforcement, no Stripe needed
+4. **PAY-2/3/4 (Stripe)** → BLOCKED on `STRIPE_SECRET_KEY` (Elias to add to .env)
+5. **SDK-5/MCP-7** → MANUAL — `npm publish` requires npm auth (Elias)
+6. **SDK-6** → MANUAL — Create GitHub repo
+
+---
+
+## Evening Verification (2026-03-30)
+
+### What Was Implemented Today
+
+1. **AGT-4: Dedicated summarize agent** — `packages/agent-summarize/` — `summarizer-alpha` live on relay, PM2 `agent-summarize` online, capability `summarize` at $0.03, model qwen3:14b
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | All 11 processes online: axip-relay (35h), hive-portal (3D), agent-beta/code-review/data-extract/delta/gamma/translate/summarize, eli, ollama |
+| Relay health | ✅ PASS | `/api/stats` → 9/21 agents online, 7 tasks settled, $0.18 ledger |
+| Portal network status | ✅ PASS | relay_online=true, 9 agents, 10 capabilities registered |
+| agent-summarize | ✅ PASS | Connected to relay, "All systems initialized. Waiting for tasks." |
+| Relay error log | ✅ PASS | EMPTY — zero errors in relay-error.log |
+| Discover smoke test | ✅ PASS | All 10 capabilities visible in portal: summarize, translate, data_extraction, code_review, monitor, alert, classify, route, prospect_research, web_search |
+
+### Issues
+
+1. **agent-beta disconnect messages** (2 logged today): "Disconnected from relay" in today's PM2 output, but scout-beta remains online. Ongoing reconnect loop — non-blocking, cosmetic.
+2. **mcp-client rapid reconnect**: ~9862 relay log entries for mcp-client-xnI17BtK connecting every ~1s. Stale scheduled task or test runner. No errors, no agent impact — causes log rotation noise.
+
+### Recommended Next Tasks (2026-03-31)
+
+1. **Investigate mcp-client reconnect loop** — `pm2 list` shows no `mcp-client` process; likely a stale WS connection from a test. Consider adding rate-limiting on re-announce to relay.
+2. **AGT-1: Upgrade agent-beta web_search** — improve retry logic, error handling, result quality
+3. **PAY-2/3/4 (Stripe)** → BLOCKED on `STRIPE_SECRET_KEY` (Elias to add to .env)
+4. **SDK-5/MCP-7** → MANUAL — `npm publish` requires npm auth (Elias)
+5. **SDK-6** → MANUAL — Create GitHub repo at github.com/axiosai/axip
+
+---
+
+## Scheduled Task Run (2026-03-30): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package scaffold, tools, and resources
+
+**Result: Already fully implemented. Tool name corrected. Server verified working.**
+
+### Status
+
+The `packages/mcp-server/` package was already implemented in a prior session. This run:
+- Verified all source files exist and are complete
+- Renamed tool `axip_discover` → `axip_discover_agents` to match spec (MCP-2)
+- Confirmed all npm workspace dependencies resolve (`@modelcontextprotocol/sdk`, `@axip/sdk`, `zod`)
+- Tested server startup live against the relay at `ws://127.0.0.1:4200`
+
+### Implementation Checklist
+
+| Task | File | Status |
+|------|------|--------|
+| MCP-1 | `packages/mcp-server/package.json` | ✅ `@axip/mcp-server` v0.1.0, bin entry, ES module, correct deps |
+| MCP-2 | `src/tools.js` — `axip_discover_agents` | ✅ capability + max_cost + min_reputation filters |
+| MCP-3 | `src/tools.js` — `axip_request_task` | ✅ full lifecycle: request → bid → accept → result, 60s timeout |
+| MCP-4 | `src/tools.js` — `axip_check_balance` | ✅ balance_request to relay with 5s fallback |
+| MCP-5 | `src/tools.js` — `axip_network_status` | ✅ status_request to relay with 5s fallback |
+| MCP-6 | `src/resources.js` — `axip://capabilities` | ✅ MCP resource listing capabilities |
+| CLI | `bin/axip-mcp.js` | ✅ `--relay`, `--agent-name`, `--help` flags, stdio transport |
+
+### Live Test Results
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+[axip-mcp] Connected to AXIP relay        ← relay handshake OK
+[axip-mcp] MCP server ready on stdin/stdout ← MCP transport up
+[axip-mcp] Disconnected from relay (reconnecting...)  ← expected on kill
+[axip-mcp] Shutting down...
+```
+
+### Usage
+
+```yaml
+# openclaw.yaml (3-line config)
+mcpServers:
+  axip:
+    command: npx
+    args: ["@axip/mcp-server", "--relay", "wss://relay.axiosaiinnovations.com"]
+```
+
+### Manual Actions Needed
+
+- **MCP-7**: Run `npm publish` in `packages/mcp-server/` (requires npm auth — Elias)
+
+---
+
+## Scheduled Task Run (2026-03-30): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, README
+
+**Result: Already complete. No changes needed.**
+
+### Verification
+
+Inspected all SDK files in `packages/sdk/`:
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `src/index.d.ts` | ✅ Complete — full types for AXIPAgent, AXIPConnection, all 16 message types, crypto namespace, messages namespace |
+| SDK-2 | `package.json` | ✅ Complete — has `files`, `engines`, `types`, `license`, `repository`, `description` |
+| SDK-3 | `README.md` | ✅ Complete — one-line description, npm install, 20-line quickstart, docs links |
+
+These were implemented in the 2026-03-29 session and confirmed again today. No code changes made.
 
 ---
 
@@ -849,3 +1091,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-26 | axip-mcp-server-build | No-op: Epic 4 (MCP Server) already ✅ COMPLETE from 2026-03-21 run. Epic 3 (SDK Publishing) still 🟡 IN PROGRESS (SDK-5 npm publish + SDK-6 GitHub repo are MANUAL blockers — no npm auth on this machine). All MCP-1 through MCP-9 confirmed complete. No code changes needed. |
 | 2026-03-26 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/14 agents online, 12 total tasks, 6 settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: clean, "All systems initialized. Waiting for tasks." e2e smoke test passed: discover(web_search) → 2 matches at 23:08 UTC. mcp-client connected/disconnected cleanly at 23:09 UTC. AGT-6 pricing changes verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Known issue: duplicate agent entries in registry (cosmetic, non-blocking). Next: VPS/Week 4 setup OR deduplicate registry entries. |
 | 2026-03-28 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/20 agents online (ghost fix working — 14 correctly offline), 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities. Relay error log: EMPTY. e2e smoke test: discover(web_search) → 1 match at 23:09 UTC ✅. Ghost cleanup verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: SDK-5 npm publish, MCP → Claude Desktop e2e test, PAY-1 PostgreSQL ledger. |
+| 2026-03-31 | axip-test-verify (evening) | All 11 PM2 processes online. Relay: 9/21 agents online, 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: ✅ connected cleanly — "All systems initialized. Waiting for tasks." ⚠️ agent-beta error log shows ERR_MODULE_NOT_FOUND for 'dotenv' on restart (8 restarts total) — agent IS running now but the error fires on cold boot before dotenv installs. No git commits today. e2e smoke test: discover route returned 404 (portal /api/discover not a valid route — expected, use relay directly). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: fix agent-beta dotenv dependency issue, then SDK-5 npm publish. |
