@@ -75,7 +75,7 @@ External developers can `npm install @axip/sdk` and connect an agent in <5 minut
 
 **Monday (Day 6) — TypeScript Types + Tests**
 - [ ] SDK-1: Write index.d.ts with full type coverage
-- [ ] SDK-4: Integration test suite (connect, discover, task lifecycle)
+- [x] SDK-4: Integration test suite (connect, discover, task lifecycle)
 
 **Tuesday (Day 7) — SDK Polish + Publish**
 - [ ] SDK-2: Update package.json for npm publish
@@ -130,13 +130,13 @@ Real money can flow through AXIP. Five production-quality agents available.
 
 **Thursday (Day 14) — Anchor Agents**
 - [ ] AGT-1: Upgrade Agent Beta (web_search) for production
-- [ ] AGT-2: Build code_review agent (Claude API)
+- [x] AGT-2: Build code_review agent (Ollama) — done, running as agent-code-review
 - [ ] AGT-4: Upgrade summarize agent
 
 **Friday (Day 15) — More Agents + Testing**
-- [ ] AGT-3: Build data_extraction agent
-- [ ] AGT-5: Build translate agent
-- [ ] AGT-6: Register all with production pricing
+- [x] AGT-3: Build data_extraction agent — done, running as agent-data-extract
+- [x] AGT-5: Build translate agent — done 2026-03-24, translator-alpha online
+- [x] AGT-6: Register all with production pricing
 - [ ] PAY-9: Refund flow for failed tasks
 - [ ] PAY-6: Balance/transaction API endpoints
 

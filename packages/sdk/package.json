@@ -24,7 +24,8 @@
     "ai"
   ],
   "scripts": {
-    "test": "node --test test/integration.test.js"
+    "test": "node --test test/integration.test.js",
+    "test:live": "node --test test/live.test.js"
   },
   "dependencies": {
     "tweetnacl": "^1.0.3",
