@@ -1,6 +1,187 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-01
+> Last updated: 2026-04-02
+
+---
+
+## Scheduled Task Run (2026-04-02): axip-daily-driver
+
+**Task:** SDK-4 — Live relay integration test suite
+
+**Result: Implemented and verified passing.**
+
+### What Was Done
+
+**SDK-4: Live relay integration test suite** (`packages/sdk/test/live.test.js`)
+
+Added 4 live tests that connect to the real relay at `ws://127.0.0.1:4200`:
+
+| Test | Result | Duration |
+|------|--------|----------|
+| Connect + receive announce_ack | ✅ PASS | 20ms |
+| Discover agents with web_search capability | ✅ PASS | 240ms |
+| Discover with non-existent capability → empty list | ✅ PASS | 15ms |
+| Full task lifecycle: request → bid → accept → result → verify → settle | ✅ PASS | 739ms |
+
+Key fixes needed before tests passed:
+- Agent names must match relay's validation regex `^[a-zA-Z0-9-]{3,64}$` — no underscores
+- `waitForEvent(agent, 'connected', ...)` must be set up BEFORE `await agent.start()` — event fires synchronously during start
+
+Also added `npm run test:live` script to `packages/sdk/package.json`.
+
+### Test Commands
+
+```bash
+# Unit tests (no relay needed)
+cd packages/sdk && npm test
+
+# Live integration tests (relay must be running)
+cd packages/sdk && npm run test:live
+```
+
+### Smoke Test
+
+| Check | Result |
+|-------|--------|
+| Relay restart | ✅ Clean restart, all 8 agents reconnected |
+| Relay health | ✅ `{status:"ok", agents_online:8}` |
+| agent-beta connectivity | ✅ Reconnected after relay restart |
+
+### Week 2 Status Summary
+
+| Task | Status |
+|------|--------|
+| SDK-1 | ✅ TypeScript types (index.d.ts) |
+| SDK-2 | ✅ package.json metadata |
+| SDK-3 | ✅ README quickstart |
+| SDK-4 | ✅ Integration test suite (today) |
+| SDK-5 | ⏭ MANUAL: `npm publish` (needs npm auth — Elias) |
+| SDK-6 | ⏭ MANUAL: Create public GitHub repo (Elias) |
+| MCP-1 through MCP-6 | ✅ All done |
+| MCP-7 | ⏭ MANUAL: `npm publish` MCP server (Elias) |
+| MCP-8 | ✅ OpenClaw integration guide |
+| MCP-9 | ✅ LangChain integration guide |
+
+### Recommended Next Tasks (2026-04-02+)
+
+**Week 3 remaining** (in order):
+1. **PAY-2**: Stripe Connect Express setup flow — needs `STRIPE_SECRET_KEY` in `.env` (Elias must add)
+2. **PAY-3**: Credit deposit via Stripe Checkout — same dependency
+3. **PAY-4**: Credit withdrawal to Stripe Connect — same dependency
+4. **PAY-9**: Verify refund flow end-to-end (code exists, needs test)
+
+**Week 4 start** (can begin now):
+5. **VPS-1**: Provision Hetzner CX22 VPS (MANUAL — Elias)
+6. **INT-5**: Build Python SDK (`pip install axip`) — code task, can start
+7. **DSH-1**: Agent onboarding guide on Hive Portal — code/content task
+
+### Manual Actions Needed (Elias)
+
+1. **SDK-5**: `npm publish` in `packages/sdk/` (npm auth required)
+2. **MCP-7**: `npm publish` in `packages/mcp-server/` (npm auth required)
+3. **SDK-6**: Create public GitHub repo at github.com/axiosai/axip
+4. **PAY-2/3/4**: Add `STRIPE_SECRET_KEY` to `~/axios-axip/.env` to unlock Stripe integration
+
+---
+
+## Evening Verification (2026-04-01): axip-test-verify
+
+**Task:** End-of-day verification of all today's implementations
+
+### What Was Implemented Today
+
+1. **PAY-8** — Spending limits HTTP API (`GET/PUT /api/credits/spending-limit/:agentId`)
+2. **pg-ledger startup fix** — `initPgLedger()` now called at relay boot
+3. **pg dependency fix** — Added `"pg": "^8.20.0"` to relay package.json
+4. **MCP-1 through MCP-6** — Re-verified MCP server package (implemented prior session)
+5. **SDK-1 through SDK-3** — Re-verified TypeScript SDK (implemented prior session)
+
+### Test Results
+
+| Check | Result | Details |
+|-------|--------|---------|
+| PM2 processes | ✅ PASS | 9/11 online (eli: stopped by design, all service processes up) |
+| Relay health | ✅ PASS | `{status:"ok", agents_online:8, uptime:14826s}` |
+| Portal network status | ✅ PASS | relay_online=true, 8 agents, 9 capabilities |
+| Relay stats | ✅ PASS | 8/21 agents online, 7/14 tasks settled, $0.18 revenue |
+| Agent-beta connectivity | ✅ PASS | Online 4h, connected to relay (1 restart from earlier boot) |
+| Relay pg error | ✅ RESOLVED | pg package was missing — fixed today, relay stable |
+| MCP client reconnect loop | ⚠️ WARN | mcp-client reconnecting every ~1s (rapid cycling in relay logs) |
+
+### Issues Found
+
+1. **mcp-client rapid reconnect loop** — Relay logs show `mcp-client-xnI17BtK` reconnecting every second. The MCP server is likely not maintaining a persistent connection (running in test/stdio mode). Not a blocking issue but noisy.
+
+### Recommended Next Tasks (2026-04-02)
+
+1. **PAY-1**: Verify credit ledger PostgreSQL schema is correct (axip_marketplace tables)
+2. **PAY-9**: Test refund flow end-to-end (timeout refund already in code)
+3. **VPS-1/VPS-2**: Begin Hetzner deployment planning (Week 4 prep)
+4. **MCP client loop**: Investigate and fix mcp-client rapid reconnection if it becomes a problem
+
+---
+
+## Scheduled Task Run (2026-04-01): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package scaffold, tools, and resources
+
+**Result: Already fully implemented. Re-verified working.**
+
+### Status
+
+All MCP server tasks were implemented in prior sessions and remain correct. This run:
+- Confirmed all source files exist and are complete (package.json, src/index.js, src/tools.js, src/resources.js, src/resources.js, bin/axip-mcp.js)
+- Re-ran live startup test against `ws://127.0.0.1:4200`
+
+### Live Test Results (2026-04-01)
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+[axip-mcp] Connected to AXIP relay        ← relay handshake OK
+[axip-mcp] MCP server ready on stdin/stdout ← MCP stdio transport up
+[axip-mcp] Shutting down...
+```
+
+### Implementation Checklist
+
+| Task | File | Status |
+|------|------|--------|
+| MCP-1 | `packages/mcp-server/package.json` | ✅ `@axip/mcp-server` v0.1.0, bin entry, ES module, correct deps |
+| MCP-2 | `src/tools.js` — `axip_discover_agents` | ✅ capability + max_cost + min_reputation filters |
+| MCP-3 | `src/tools.js` — `axip_request_task` | ✅ full lifecycle: request → bid → accept → result, 60s timeout |
+| MCP-4 | `src/tools.js` — `axip_check_balance` | ✅ balance_request to relay with 5s fallback |
+| MCP-5 | `src/tools.js` — `axip_network_status` | ✅ status_request to relay with 5s fallback |
+| MCP-6 | `src/resources.js` — `axip://capabilities` | ✅ MCP resource listing capabilities |
+| CLI | `bin/axip-mcp.js` | ✅ `--relay`, `--agent-name`, `--help` flags, stdio transport |
+
+### Manual Actions Needed
+
+- **MCP-7**: Run `npm publish` in `packages/mcp-server/` (requires npm auth — Elias)
+
+---
+
+## Scheduled Task Run (2026-04-01): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, README
+
+**Result: Already complete. No changes needed.**
+
+### Verification
+
+Week 1 security hardening confirmed complete (✅ in progress tracker). Checked all SDK files:
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Already complete — full types for AXIPAgent, AXIPConnection, AXIPIdentity, all message types (announce, discover, task_request/bid/accept/result/verify/settle, heartbeat, error), crypto namespace, messages namespace |
+| SDK-2 | `packages/sdk/package.json` | ✅ Already complete — `files: ["src/"]`, `engines: {node: ">=18.0.0"}`, `types`, `license: "MIT"`, `repository`, `description` all present |
+| SDK-3 | `packages/sdk/README.md` | ✅ Already complete — one-line description, npm install, quickstart example (connect, discover, task lifecycle), links to docs |
+
+All three tasks were implemented in the 2026-03-29 session and re-verified on 2026-03-30 and 2026-03-31. Files unchanged and correct. No code changes made.
+
+### Manual Actions Still Needed
+
+- **SDK-5**: `npm publish` in `packages/sdk/` (requires npm auth — Elias)
+- **SDK-6**: Create public GitHub repo at github.com/axiosai/axip (Elias)
 
 ---
 
