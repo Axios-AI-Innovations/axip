@@ -1,6 +1,118 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-02
+> Last updated: 2026-04-03
+
+---
+
+## Scheduled Task Run (2026-04-03): axip-daily-driver
+
+**Task:** INT-5 — Python SDK (`pip install axip`)
+
+**Result: Implemented and verified against live relay.**
+
+### What Was Built
+
+New package: `packages/axip-python/` — a Python asyncio SDK for the AXIP protocol.
+
+**Files:**
+| File | Description |
+|------|-------------|
+| `pyproject.toml` | Package config: `axip` v0.1.0, deps: websockets>=12, PyNaCl>=1.5 |
+| `src/axip/__init__.py` | Public exports |
+| `src/axip/crypto.py` | Ed25519 identity (PyNaCl), load/create from `~/.axip/<name>/identity.json` |
+| `src/axip/messages.py` | All AXIP message builders + canonicalize/sign/verify |
+| `src/axip/agent.py` | `AXIPAgent` class with asyncio WebSocket client |
+| `examples/hello_agent.py` | Provider agent example (handles echo tasks) |
+| `examples/request_task.py` | Requester agent example (discover + request_task) |
+
+**Key design decisions:**
+- Uses `websockets` 16.x asyncio API (`ws_client.connect`)
+- PyNaCl Ed25519 — crypto-compatible with JS tweetnacl
+- Identity format identical to `@axip/sdk` — same `~/.axip/<name>/identity.json` file
+- Auto-reconnect + heartbeat loop
+- `@agent.on_task("capability")` decorator pattern
+- High-level `request_task()` and `complete_task()` helpers
+
+### Live Test Results
+
+```
+[test] announce_ack: agent_id=py-test-agent-0S2d6TuT  ✅
+[test] Connection and announce: PASS
+[test] Discover web_search: PASS (1 agents)          ✅
+  - scout-beta (scout-beta-wOHiQdnE)
+[test] Discover echo (self): PASS (0 agents)          ✅ (relay excludes self)
+[test] All live tests passed!
+```
+
+### Smoke Test
+- Relay stable: `pm2 logs axip-relay` shows clean operation, 8+ agents online
+- `agent-beta` online 40h+, no issues
+
+### Next Tasks (2026-04-03+)
+
+**Week 4 remaining (code tasks):**
+1. **DSH-1**: Agent onboarding guide on Hive Portal (content/UI task)
+2. **DSH-2**: Capability marketplace page with search/filter
+3. **INT-1**: OpenClaw skill for AXIP (MCP guide exists, need actual skill code)
+4. **INT-2**: CrewAI tool wrapper example
+5. **INT-3**: LangChain @tool example
+
+**Blocked on Elias:**
+- **SDK-5 / MCP-7**: `npm publish` (needs npm auth)
+- **SDK-6**: Create public GitHub repo
+- **PAY-2/3/4**: Add `STRIPE_SECRET_KEY` to `.env` to unlock Stripe endpoints
+- **INT-5 publish**: `pip publish axip` to PyPI (needs PyPI auth token)
+- **VPS-1**: Provision Hetzner CX22 VPS ($4.85/mo)
+
+---
+
+## Scheduled Task Run (2026-04-02): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — Verify and smoke-test the AXIP MCP server
+
+**Result: All MCP tasks already complete and verified working.**
+
+### What Was Checked
+
+- **MCP-1** (`packages/mcp-server/package.json`): `@axip/mcp-server` with bin entry `axip-mcp`, depends on `@modelcontextprotocol/sdk` and `@axip/sdk` ✅
+- **MCP-2** (`src/tools.js`): `axip_discover_agents` tool — capability, max_cost, min_reputation inputs ✅
+- **MCP-3** (`src/tools.js`): `axip_request_task` tool — full lifecycle (request → bid → accept → result) ✅
+- **MCP-4** (`src/tools.js`): `axip_check_balance` tool — returns current credit balance ✅
+- **MCP-5** (`src/tools.js`): `axip_network_status` tool — agents count, capabilities, activity ✅
+- **MCP-6** (`src/resources.js`): `axip://capabilities` MCP resource ✅
+- **bin/axip-mcp.js**: CLI entry point with `--relay` and `--agent-name` args ✅
+
+### Live Smoke Test
+
+Ran the server against local relay (`ws://127.0.0.1:4200`) and sent MCP protocol messages:
+
+| Check | Result |
+|-------|--------|
+| Server starts | ✅ `[axip-mcp] Starting...` |
+| Relay connect | ✅ `[axip-mcp] Connected to AXIP relay` |
+| MCP stdio ready | ✅ `[axip-mcp] MCP server ready on stdin/stdout` |
+| MCP initialize | ✅ Returns `{"protocolVersion":"2024-11-05","serverInfo":{"name":"@axip/mcp-server","version":"0.1.0"}}` |
+| tools/list | ✅ Returns all 4 tools with correct schemas |
+| Graceful disconnect | ✅ Reconnect events fired on relay drop |
+
+No code changes were made — the implementation was complete from a prior session.
+
+---
+
+## Scheduled Task Run (2026-04-02): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: All tasks already complete. No changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (SEC-1 through SEC-8 per tracker)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): Already exists — 527-line complete TypeScript definitions covering `AXIPAgent`, `AXIPConnection`, all 16 message types, all payload interfaces, and `crypto`/`messages` namespaces
+- **SDK-2** (`packages/sdk/package.json`): Already has `files`, `engines`, `types`, `license`, `repository`, and `description` — fully npm-publish ready
+- **SDK-3** (`packages/sdk/README.md`): Already has one-line description, `npm install` command, 20-line quickstart example (connect → discover → task), and link to full docs
+
+No code changes were made — all three tasks were implemented in a prior session.
 
 ---
 
@@ -1273,3 +1385,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-26 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/14 agents online, 12 total tasks, 6 settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: clean, "All systems initialized. Waiting for tasks." e2e smoke test passed: discover(web_search) → 2 matches at 23:08 UTC. mcp-client connected/disconnected cleanly at 23:09 UTC. AGT-6 pricing changes verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Known issue: duplicate agent entries in registry (cosmetic, non-blocking). Next: VPS/Week 4 setup OR deduplicate registry entries. |
 | 2026-03-28 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/20 agents online (ghost fix working — 14 correctly offline), 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities. Relay error log: EMPTY. e2e smoke test: discover(web_search) → 1 match at 23:09 UTC ✅. Ghost cleanup verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: SDK-5 npm publish, MCP → Claude Desktop e2e test, PAY-1 PostgreSQL ledger. |
 | 2026-03-31 | axip-test-verify (evening) | All 11 PM2 processes online. Relay: 9/21 agents online, 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: ✅ connected cleanly — "All systems initialized. Waiting for tasks." ⚠️ agent-beta error log shows ERR_MODULE_NOT_FOUND for 'dotenv' on restart (8 restarts total) — agent IS running now but the error fires on cold boot before dotenv installs. No git commits today. e2e smoke test: discover route returned 404 (portal /api/discover not a valid route — expected, use relay directly). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: fix agent-beta dotenv dependency issue, then SDK-5 npm publish. |
+| 2026-04-02 | axip-test-verify (evening) | All 10 PM2 processes online (eli stopped — expected). Relay: 8/25 agents online, 9 tasks settled, $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). No new git commits today — no automated daily-driver changes. Online agents: summarizer-alpha, translator-alpha, data-extract, code-review, mcp-client, sentinel-delta, router-gamma, scout-beta (= agent-beta). ⚠️ ISSUE: mcp-client (PM2) is in a rapid reconnect loop — 134 reconnect events in last 200 relay log lines, connecting/replacing stale connection every ~1 second. This floods relay logs and may cause performance degradation. Needs investigation (likely a bug in mcp-client reconnect backoff logic). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: investigate + fix mcp-client reconnect loop, then SDK-5 npm publish. |
