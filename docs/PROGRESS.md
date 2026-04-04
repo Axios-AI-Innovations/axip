@@ -1,6 +1,112 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-03
+> Last updated: 2026-04-04
+
+---
+
+## Scheduled Task Run (2026-04-04): axip-daily-driver
+
+**Task:** INT-2 — CrewAI tool wrapper for AXIP
+
+**Result: Implemented and committed.**
+
+### What Was Built
+
+New module: `packages/axip-python/src/axip/crewai_tools.py`
+
+**Files:**
+| File | Description |
+|------|-------------|
+| `packages/axip-python/src/axip/crewai_tools.py` | `make_axip_tools()` factory — returns 3 BaseTool instances for CrewAI |
+| `packages/axip-python/examples/crewai_example.py` | Two-agent crew demo (Researcher + Analyst using web_search + summarize) |
+| `docs/integrations/crewai.md` | Full integration guide with quickstart, config, troubleshooting |
+
+**Key design decisions:**
+- `crewai` is an optional dependency — module imports cleanly without it
+- Shared `AXIPAgent` in a daemon background thread, bridged to CrewAI's sync world via `asyncio.run_coroutine_threadsafe()`
+- Three tools: `axip_request_task`, `axip_discover_agents`, `axip_network_status`
+- Pydantic `BaseModel` input schemas (required by CrewAI's BaseTool)
+- `AXIPNetworkStatus` falls back to the hive-portal HTTP API (`/api/network/status` on port 4201)
+
+### Relay Status
+- `axip-relay`: online, 47h+ uptime ✅
+- All 7 agents online, no issues ✅
+
+### Next Tasks (2026-04-04+)
+
+**Week 4 remaining (code tasks):**
+1. **INT-3**: LangChain `@tool` example (direct Python SDK approach, complements existing MCP guide)
+2. **INT-4**: OpenAI Agents SDK example
+3. **INT-1**: OpenClaw skill for AXIP (needs Elias's input on OpenClaw specifics)
+4. **DSH-1**: Agent onboarding guide improvements on Hive Portal
+5. **DSH-2**: Verify/enhance capability marketplace page (appears mostly done)
+
+**Blocked on Elias:**
+- **SDK-5 / MCP-7**: `npm publish` (needs npm auth)
+- **SDK-6**: Create public GitHub repo
+- **PAY-2/3/4**: Add `STRIPE_SECRET_KEY` to `.env` to unlock Stripe endpoints
+- **INT-5 publish**: `pip publish axip` to PyPI (needs PyPI auth token)
+- **VPS-1**: Provision Hetzner CX22 VPS ($4.85/mo)
+
+---
+
+## Scheduled Task Run (2026-04-03): axip-mcp-server-build (re-verify)
+
+**Task:** MCP-1 through MCP-6 — Verify AXIP MCP server still works
+
+**Result: All tasks verified complete and live-tested. No changes needed.**
+
+### What Was Checked
+
+- **MCP-1** (`packages/mcp-server/package.json`): `@axip/mcp-server` with bin `axip-mcp` ✅
+- **MCP-2** (`src/tools.js`): `axip_discover_agents` — capability/max_cost/min_reputation ✅
+- **MCP-3** (`src/tools.js`): `axip_request_task` — full bid lifecycle ✅
+- **MCP-4** (`src/tools.js`): `axip_check_balance` ✅
+- **MCP-5** (`src/tools.js`): `axip_network_status` ✅
+- **MCP-6** (`src/resources.js`): `axip://capabilities` + `axip://leaderboard` resources ✅
+- **bin/axip-mcp.js**: CLI with `--relay` and `--agent-name` args ✅
+
+### Live Smoke Test Results
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: smoke-test-mcp
+[axip-mcp] Connected to AXIP relay
+[axip-mcp] MCP server ready on stdin/stdout
+```
+
+| Check | Result |
+|-------|--------|
+| Server starts | ✅ |
+| Relay connect (local) | ✅ `Connected to AXIP relay` |
+| MCP `initialize` response | ✅ `protocolVersion: "2024-11-05"`, serverInfo `@axip/mcp-server v0.1.0` |
+| `tools/list` | ✅ 4 tools returned with correct input schemas |
+| `tools/call axip_discover_agents` (web_search) | ✅ Returns `scout-beta-wOHiQdnE` with pricing and reputation `0.622` |
+
+### Relay Status
+
+```
+axip-relay   online  28h uptime
+agent-beta   online  45h uptime  (7 agents total online)
+```
+
+No code changes made — implementation fully operational from prior session.
+
+---
+
+## Scheduled Task Run (2026-04-03): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: All tasks already complete. No changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run tracker)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): Exists ✅ — TypeScript definitions for AXIPAgent, AXIPConnection, all message types, crypto/messages namespaces
+- **SDK-2** (`packages/sdk/package.json`): Exists ✅ — `files`, `engines`, `types`, `license`, `repository`, `description` all present
+- **SDK-3** (`packages/sdk/README.md`): Exists ✅ — one-line description, npm install, 20-line quickstart, docs link
+
+All three tasks were implemented and verified in the prior session (2026-04-02). No code changes made.
 
 ---
 
@@ -1386,3 +1492,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-03-28 | axip-test-verify (evening) | All 10 PM2 processes online. Relay: 8/20 agents online (ghost fix working — 14 correctly offline), 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities. Relay error log: EMPTY. e2e smoke test: discover(web_search) → 1 match at 23:09 UTC ✅. Ghost cleanup verified live. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: SDK-5 npm publish, MCP → Claude Desktop e2e test, PAY-1 PostgreSQL ledger. |
 | 2026-03-31 | axip-test-verify (evening) | All 11 PM2 processes online. Relay: 9/21 agents online, 7 tasks settled, $0.18 earned. Portal: relay_online=true, 10 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta: ✅ connected cleanly — "All systems initialized. Waiting for tasks." ⚠️ agent-beta error log shows ERR_MODULE_NOT_FOUND for 'dotenv' on restart (8 restarts total) — agent IS running now but the error fires on cold boot before dotenv installs. No git commits today. e2e smoke test: discover route returned 404 (portal /api/discover not a valid route — expected, use relay directly). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: fix agent-beta dotenv dependency issue, then SDK-5 npm publish. |
 | 2026-04-02 | axip-test-verify (evening) | All 10 PM2 processes online (eli stopped — expected). Relay: 8/25 agents online, 9 tasks settled, $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). No new git commits today — no automated daily-driver changes. Online agents: summarizer-alpha, translator-alpha, data-extract, code-review, mcp-client, sentinel-delta, router-gamma, scout-beta (= agent-beta). ⚠️ ISSUE: mcp-client (PM2) is in a rapid reconnect loop — 134 reconnect events in last 200 relay log lines, connecting/replacing stale connection every ~1 second. This floods relay logs and may cause performance degradation. Needs investigation (likely a bug in mcp-client reconnect backoff logic). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: investigate + fix mcp-client reconnect loop, then SDK-5 npm publish. |
+| 2026-04-03 | axip-test-verify (evening) | All 10 PM2 processes online (eli stopped — expected). Relay: 8/28 agents online, 10 tasks settled, $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). No new git commits today. ⚠️ PERSISTENT ISSUE: mcp-client reconnect loop continues unresolved — still reconnecting every ~1 second (67 events in last 100 relay log lines). mcp-client (PM2 id 21) is online but spamming "Replaced stale connection" log entries. agent-beta logs empty (likely rotated). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Recommended next tasks: (1) fix mcp-client reconnect loop (check ~/axios-axip/packages/mcp-server or wherever mcp-client lives, add exponential backoff), (2) npm publish @axip/sdk (SDK-5), (3) GitHub repo creation (SDK-6). |
