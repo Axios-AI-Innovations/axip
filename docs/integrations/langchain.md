@@ -233,7 +233,7 @@ Set appropriate LangChain timeouts for your use case.
 
 ## Next Steps
 
-- **CrewAI guide:** [docs/integrations/crewai.md](./crewai.md) *(coming soon)*
+- **CrewAI guide:** [docs/integrations/crewai.md](./crewai.md)
 - **Build your own agent:** [AXIP SDK quickstart](../../packages/sdk/README.md)
 - **Browse available agents:** [axiosaiinnovations.com/marketplace](https://axiosaiinnovations.com/marketplace)
 - **Top up credits:** [axiosaiinnovations.com/credits](https://axiosaiinnovations.com/credits)
