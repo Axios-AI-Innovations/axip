@@ -1,6 +1,98 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-05
+> Last updated: 2026-04-06
+
+---
+
+## Scheduled Task Run (2026-04-06): axip-daily-driver
+
+**Task:** INT-4 — OpenAI Agents SDK integration (Python direct SDK)
+
+**Result: Implemented and committed.**
+
+### What Was Built
+
+| File | Description |
+|------|-------------|
+| `packages/axip-python/src/axip/openai_agents_tools.py` | `make_axip_tools()` factory — 3 `@function_tool`-decorated tools for OpenAI Agents SDK |
+| `packages/axip-python/examples/openai_agents_example.py` | Single-query, multi-step workflow, and handoff pattern demos |
+| `docs/integrations/openai-agents.md` | Full integration guide with MCP alternative, handoff pattern, sync usage, and troubleshooting |
+
+**Key design decisions:**
+- `@function_tool` decorator from `openai-agents` — schema auto-generated from type hints and docstrings
+- Same background-thread + `run_coroutine_threadsafe` bridge as CrewAI/LangChain tools — one shared connection per process
+- `openai-agents` is an optional dependency — `axip` installs cleanly without it
+- Guide covers both Direct Python SDK path (3 tools, no Node.js) and MCP path (4 tools via `MCPServerStdio`)
+- Handoff pattern example: coordinator + specialist agent
+
+### Relay Status
+- `axip-relay`: online, health check ✅ (`agents_online: 7`)
+
+### Next Tasks (2026-04-06+)
+
+**Week 4 remaining (code tasks):**
+1. **INT-1**: OpenClaw skill for AXIP (needs Elias's input on OpenClaw skill format — see openclaw.md)
+2. **DSH-1**: Agent onboarding guide improvements on Hive Portal
+3. **DSH-2**: Verify/enhance capability marketplace page
+4. **DSH-6**: OpenAPI docs for all endpoints
+
+**Manual actions needed (Week 4):**
+- VPS-1 through VPS-4: Hetzner VPS provisioning and deployment (blocked on Elias doing manual setup)
+- DNS entries in Vercel for relay.axiosaiinnovations.com and portal.axiosaiinnovations.com
+
+---
+
+## Scheduled Task Run (2026-04-05): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — Verify AXIP MCP server is complete and live-test against relay
+
+**Result: All tasks verified complete and live-tested. No changes needed.**
+
+### What Was Checked
+
+- **MCP-1** (`packages/mcp-server/package.json`): `@axip/mcp-server` v0.1.0 with `bin: axip-mcp`, `@modelcontextprotocol/sdk ^1.29.0` dep ✅
+- **MCP-2** (`src/tools.js`): `axip_discover_agents` — capability/max_cost/min_reputation inputs ✅
+- **MCP-3** (`src/tools.js`): `axip_request_task` — full bid lifecycle (request→bid→accept→result) ✅
+- **MCP-4** (`src/tools.js`): `axip_check_balance` — with 5s timeout fallback ✅
+- **MCP-5** (`src/tools.js`): `axip_network_status` — with 5s timeout fallback ✅
+- **MCP-6** (`src/resources.js`): `axip://capabilities` + `axip://leaderboard` resources ✅
+- **bin/axip-mcp.js**: CLI with `--relay` and `--agent-name` args, stdio transport ✅
+
+### Live Smoke Test Results (2026-04-05)
+
+Node: v25.6.0 | Relay: ws://127.0.0.1:4200
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: smoke-test-2026-04-05-YxRNIRxf
+[axip-mcp] Connected to AXIP relay
+[axip-mcp] MCP server ready on stdin/stdout
+```
+
+| Check | Result |
+|-------|--------|
+| Server starts | ✅ |
+| Relay connect (local) | ✅ `Connected to AXIP relay` |
+| Relay health (HTTP) | ✅ WebSocket endpoint live (`Upgrade Required`) |
+| MCP `initialize` response | ✅ `protocolVersion: "2024-11-05"`, serverInfo `@axip/mcp-server v0.1.0` |
+| `tools/list` | ✅ 4 tools: `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status` |
+| `resources/list` | ✅ 2 resources: `axip://capabilities`, `axip://leaderboard` |
+
+No code changes made — implementation fully operational.
+
+---
+
+## Scheduled Task Run (2026-04-05): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: Already complete. No changes needed.**
+
+- **Week 1 security hardening**: Confirmed ✅ complete
+- **SDK-1** (`packages/sdk/src/index.d.ts`): ✅ present
+- **SDK-2** (`packages/sdk/package.json`): ✅ present with all required metadata
+- **SDK-3** (`packages/sdk/README.md`): ✅ present
+
+All SDK publishing prep was completed in the prior run on 2026-04-04. No code changes made.
 
 ---
 
@@ -1586,3 +1678,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-04-02 | axip-test-verify (evening) | All 10 PM2 processes online (eli stopped — expected). Relay: 8/25 agents online, 9 tasks settled, $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). No new git commits today — no automated daily-driver changes. Online agents: summarizer-alpha, translator-alpha, data-extract, code-review, mcp-client, sentinel-delta, router-gamma, scout-beta (= agent-beta). ⚠️ ISSUE: mcp-client (PM2) is in a rapid reconnect loop — 134 reconnect events in last 200 relay log lines, connecting/replacing stale connection every ~1 second. This floods relay logs and may cause performance degradation. Needs investigation (likely a bug in mcp-client reconnect backoff logic). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: investigate + fix mcp-client reconnect loop, then SDK-5 npm publish. |
 | 2026-04-03 | axip-test-verify (evening) | All 10 PM2 processes online (eli stopped — expected). Relay: 8/28 agents online, 10 tasks settled, $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). No new git commits today. ⚠️ PERSISTENT ISSUE: mcp-client reconnect loop continues unresolved — still reconnecting every ~1 second (67 events in last 100 relay log lines). mcp-client (PM2 id 21) is online but spamming "Replaced stale connection" log entries. agent-beta logs empty (likely rotated). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Recommended next tasks: (1) fix mcp-client reconnect loop (check ~/axios-axip/packages/mcp-server or wherever mcp-client lives, add exponential backoff), (2) npm publish @axip/sdk (SDK-5), (3) GitHub repo creation (SDK-6). |
 | 2026-04-04 | axip-test-verify (evening) | 10 PM2 processes online (eli stopped — expected). No new code changes today (no git commits). Relay: 7/31 agents online, 11 tasks settled (+1 from SDK smoke test), $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). ✅ mcp-client reconnect loop RESOLVED — loop stopped at 21:45:31 UTC (mcp-client process removed from PM2), relay logs clean since. e2e smoke test at 23:09: discover(web_search) → 1 match ✅. SDK integration tests at 23:10: full task lifecycle REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED ✅. All 7 anchor agents online and healthy. ⚠️ Telegram bot token (TELEGRAM_BOT_TOKEN in ~/eli-agent/.env) returns 401 Unauthorized — token may be revoked/regenerated, needs update. MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token, (2) npm publish @axip/sdk (SDK-5), (3) GitHub repo creation (SDK-6), (4) PAY-2/3/4 Stripe integration (needs keys). |
+| 2026-04-05 | axip-test-verify (evening) | 10 PM2 processes online (eli stopped — expected). No new git commits today. Relay: 7/33 agents online, 12 tasks settled (+1 from prior SDK smoke test), $0.18 earned. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). agent-beta (scout-beta): online, 4D uptime, log rotated (last logs from Apr 2). Prior cron smoke tests confirmed in relay logs: discover(web_search) → 1 match at 23:09 UTC ✅. SDK full task lifecycle test at 23:09 UTC: REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED ✅. mcp-test-probe connected/disconnected cleanly at 23:10 UTC ✅. All 7 anchor agents online and healthy (summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta). ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — 2nd day, needs manual fix (update token in ~/eli-agent/.env). MANUAL blockers remain: npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4), Telegram bot token. Next: (1) fix Telegram bot token (URGENT — status messages not delivering), (2) npm publish @axip/sdk (SDK-5), (3) GitHub repo creation (SDK-6). |
