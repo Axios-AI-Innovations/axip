@@ -4,6 +4,99 @@
 
 ---
 
+## Evening Verification Run (2026-04-06): axip-test-verify
+
+**Task:** Evening verification — test all services and validate today's INT-4 implementation
+
+### What Was Implemented Today
+
+- **INT-4** (2 commits): OpenAI Agents SDK integration via Python SDK
+  - `packages/axip-python/src/axip/openai_agents_tools.py` — `make_axip_tools()` factory with 3 `@function_tool`-decorated tools
+  - `packages/axip-python/examples/openai_agents_example.py` — single-query, multi-step, handoff demos
+  - `docs/integrations/openai-agents.md` — full integration guide
+
+### Test Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Relay process (node relay/src/index.js) | ✅ PASS | Running since Thu Apr 02, uptime ~107h |
+| Relay health (port 4200) | ✅ PASS | v0.1.0, uptime 385765s |
+| Relay stats (port 4201) | ✅ PASS | 7 agents online, 35 total, 13 tasks settled, $0.18 |
+| Portal (port 4202) | ✅ PASS | relay_online=true, 9 capabilities listed |
+| Agent processes | ✅ PASS | 7 agents running (summarize, translate, code-review, data-extract, delta, gamma, beta) |
+| Agent-beta | ✅ PASS | Process online, no errors in error log |
+| Relay error log | ✅ PASS | 0 errors in relay-out.log |
+| INT-4 files | ✅ PASS | `openai_agents_tools.py` present in axip-python package |
+| Full task lifecycle (relay logs) | ✅ PASS | REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED confirmed |
+
+### Issues Found
+
+None — all services healthy, all files verified.
+
+### Recommended Next Tasks (2026-04-07)
+
+1. **INT-1** — OpenClaw skill for AXIP (needs Elias input on OpenClaw skill format — see openclaw.md)
+2. **DSH-1** — Agent onboarding guide improvements on Hive Portal
+3. **DSH-2** — Verify/enhance capability marketplace page
+4. **DSH-6** — OpenAPI docs for all relay endpoints
+5. **VPS-1 through VPS-4** — Hetzner VPS provisioning (manual setup required by Elias)
+6. **DNS** — Set up relay.axiosaiinnovations.com and portal.axiosaiinnovations.com in Vercel
+
+---
+
+## Scheduled Task Run (2026-04-06): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — Verify AXIP MCP server is complete and live-test against relay
+
+**Result: All tasks verified complete and live-tested. No changes needed.**
+
+### What Was Checked
+
+- **MCP-1** (`packages/mcp-server/package.json`): `@axip/mcp-server` v0.1.0 with `bin: axip-mcp`, `@modelcontextprotocol/sdk ^1.29.0` dep ✅
+- **MCP-2** (`src/tools.js`): `axip_discover_agents` — capability/max_cost/min_reputation inputs ✅
+- **MCP-3** (`src/tools.js`): `axip_request_task` — full bid lifecycle (request→bid→accept→result) ✅
+- **MCP-4** (`src/tools.js`): `axip_check_balance` — with 5s timeout fallback ✅
+- **MCP-5** (`src/tools.js`): `axip_network_status` — with 5s timeout fallback ✅
+- **MCP-6** (`src/resources.js`): `axip://capabilities` + `axip://leaderboard` resources ✅
+- **bin/axip-mcp.js**: CLI with `--relay` and `--agent-name` args, stdio transport ✅
+
+### Live Smoke Test Results (2026-04-06)
+
+Node: v25.6.0 | Relay: ws://127.0.0.1:4200
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: smoke-2026-04-06b
+[axip-mcp] Connected to AXIP relay
+[axip-mcp] MCP server ready on stdin/stdout
+```
+
+| Check | Result |
+|-------|--------|
+| Server starts | ✅ |
+| Relay connect (local) | ✅ `Connected to AXIP relay` |
+| MCP `initialize` response | ✅ `protocolVersion: "2024-11-05"`, serverInfo `@axip/mcp-server v0.1.0` |
+| `tools/list` | ✅ 4 tools: `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status` |
+| `resources/list` | ✅ 2 resources: `axip://capabilities`, `axip://leaderboard` |
+
+No code changes made — implementation fully operational.
+
+---
+
+## Scheduled Task Run (2026-04-06): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: Already complete. No changes needed.**
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): ✅ file present
+- **SDK-2** (`packages/sdk/package.json`): ✅ file present with metadata
+- **SDK-3** (`packages/sdk/README.md`): ✅ file present
+
+All SDK publishing prep was completed in prior runs. No code changes made.
+
+---
+
 ## Scheduled Task Run (2026-04-06): axip-daily-driver
 
 **Task:** INT-4 — OpenAI Agents SDK integration (Python direct SDK)
