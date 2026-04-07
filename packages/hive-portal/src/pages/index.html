@@ -46,6 +46,7 @@
       gap: 0;
       border-bottom: 1px solid #1a1a1a;
       background: #0f0f0f;
+      flex-wrap: wrap;
     }
 
     .nav button {
@@ -151,35 +152,17 @@
       margin: 2px;
     }
 
-    .badge-cap {
-      background: #0d3d44;
-      color: #00bcd4;
-    }
-
-    .badge-online {
-      background: #0d3d1a;
-      color: #4caf50;
-    }
-
-    .badge-offline {
-      background: #3d1a0d;
-      color: #f44336;
-    }
-
-    .badge-settled {
-      background: #0d3d44;
-      color: #00bcd4;
-    }
-
-    .badge-failed {
-      background: #3d1a0d;
-      color: #f44336;
-    }
-
-    .badge-pending {
-      background: #3d3d0d;
-      color: #ffeb3b;
-    }
+    .badge-cap { background: #0d3d44; color: #00bcd4; }
+    .badge-online { background: #0d3d1a; color: #4caf50; }
+    .badge-offline { background: #3d1a0d; color: #f44336; }
+    .badge-settled { background: #0d3d44; color: #00bcd4; }
+    .badge-failed { background: #3d1a0d; color: #f44336; }
+    .badge-pending { background: #3d3d0d; color: #ffeb3b; }
+    .badge-success { background: #1b3a1b; color: #4caf50; }
+    .badge-error { background: #3a1b1b; color: #f44336; }
+    .badge-warn { background: #3a2f1b; color: #ff9800; }
+    .badge-info { background: #1b2a3a; color: #2196f3; }
+    .badge-neutral { background: #2a2a2a; color: #888; }
 
     /* ─── Reputation Bar ─────────────────────────────── */
     .rep-bar {
@@ -198,27 +181,75 @@
       background: #00bcd4;
     }
 
-    /* ─── Join Tab ────────────────────────────────────── */
-    .join-section {
-      margin-bottom: 40px;
+    /* ─── Status Hero ────────────────────────────────── */
+    .status-hero {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      background: #1a1a1a;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
     }
 
-    .join-section h2 {
-      font-size: 1.3rem;
+    .status-indicator {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-indicator.up {
+      background: #4caf50;
+      box-shadow: 0 0 16px rgba(76,175,80,0.4);
+    }
+
+    .status-indicator.down {
+      background: #f44336;
+      box-shadow: 0 0 16px rgba(244,67,54,0.4);
+    }
+
+    .status-hero-text h2 {
       color: #fff;
-      margin-bottom: 8px;
+      font-size: 1.3rem;
+      margin-bottom: 4px;
     }
 
-    .join-section h3 {
-      font-size: 1rem;
-      color: #00bcd4;
-      margin: 20px 0 8px;
+    .status-hero-text p {
+      color: #888;
+      font-size: 0.85rem;
     }
 
-    .join-section p {
-      color: #aaa;
-      margin-bottom: 12px;
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 24px;
     }
+
+    .health-dots {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-top: 16px;
+    }
+
+    .health-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #222;
+    }
+
+    .health-dot.ok { background: #4caf50; }
+    .health-dot.fail { background: #f44336; }
+
+    /* ─── Join Tab ────────────────────────────────────── */
+    .join-section { margin-bottom: 40px; }
+    .join-section h2 { font-size: 1.3rem; color: #fff; margin-bottom: 8px; }
+    .join-section h3 { font-size: 1rem; color: #00bcd4; margin: 20px 0 8px; }
+    .join-section p { color: #aaa; margin-bottom: 12px; }
 
     .promise-box {
       background: #0d3d44;
@@ -227,22 +258,10 @@
       padding: 20px;
       margin-bottom: 30px;
     }
+    .promise-box p { color: #e0e0e0; font-size: 1rem; }
+    .promise-box strong { color: #00bcd4; }
 
-    .promise-box p {
-      color: #e0e0e0;
-      font-size: 1rem;
-    }
-
-    .promise-box strong {
-      color: #00bcd4;
-    }
-
-    /* ─── Code Blocks ────────────────────────────────── */
-    .code-wrap {
-      position: relative;
-      margin: 12px 0 20px;
-    }
-
+    .code-wrap { position: relative; margin: 12px 0 20px; }
     .code-block {
       background: #111;
       border: 1px solid #222;
@@ -255,251 +274,505 @@
       color: #e0e0e0;
       white-space: pre;
     }
-
     .copy-btn {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      background: #2a2a2a;
-      border: 1px solid #333;
-      color: #aaa;
-      padding: 4px 10px;
-      border-radius: 4px;
-      font-size: 0.75rem;
-      cursor: pointer;
-      transition: all 0.2s;
+      position: absolute; top: 8px; right: 8px;
+      background: #2a2a2a; border: 1px solid #333;
+      color: #aaa; padding: 4px 10px; border-radius: 4px;
+      font-size: 0.75rem; cursor: pointer; transition: all 0.2s;
     }
-
     .copy-btn:hover { background: #333; color: #fff; }
     .copy-btn.copied { background: #0d3d1a; color: #4caf50; border-color: #4caf50; }
 
-    /* ─── Step Numbers ───────────────────────────────── */
-    .step {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
+    .step { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
     .step-num {
-      flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #00bcd4;
-      color: #0a0a0a;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.9rem;
+      flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+      background: #00bcd4; color: #0a0a0a;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 0.9rem;
     }
+    .step-content { flex: 1; }
+    .step-content h3 { margin: 0 0 6px; }
 
-    .step-content {
-      flex: 1;
-    }
-
-    .step-content h3 {
-      margin: 0 0 6px;
-    }
-
-    /* ─── Protocol Lifecycle ─────────────────────────── */
     .lifecycle {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-      gap: 12px;
-      margin: 16px 0;
+      gap: 12px; margin: 16px 0;
     }
-
     .lifecycle-step {
-      background: #1a1a1a;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 14px;
-      text-align: center;
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 14px; text-align: center;
     }
-
-    .lifecycle-step .icon {
-      font-size: 1.4rem;
-      margin-bottom: 6px;
-    }
-
-    .lifecycle-step .name {
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #fff;
-    }
-
-    .lifecycle-step .cost {
-      font-size: 0.75rem;
-      color: #4caf50;
-      margin-top: 4px;
-    }
-
-    .lifecycle-step.paid {
-      border-color: #ff9800;
-    }
-
-    .lifecycle-step.paid .cost {
-      color: #ff9800;
-    }
+    .lifecycle-step .icon { font-size: 1.4rem; margin-bottom: 6px; }
+    .lifecycle-step .name { font-size: 0.85rem; font-weight: 600; color: #fff; }
+    .lifecycle-step .cost { font-size: 0.75rem; color: #4caf50; margin-top: 4px; }
+    .lifecycle-step.paid { border-color: #ff9800; }
+    .lifecycle-step.paid .cost { color: #ff9800; }
 
     /* ─── Capabilities Tab ───────────────────────────── */
     .cap-card {
-      background: #1a1a1a;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 16px;
-      margin-bottom: 12px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 16px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: center;
     }
+    .cap-info h4 { color: #fff; font-size: 1rem; }
+    .cap-info .meta { color: #666; font-size: 0.85rem; }
+    .cap-price { text-align: right; }
+    .cap-price .range { color: #00bcd4; font-weight: 600; }
+    .cap-price .label { color: #555; font-size: 0.75rem; }
 
-    .cap-info h4 {
-      color: #fff;
-      font-size: 1rem;
-    }
-
-    .cap-info .meta {
-      color: #666;
-      font-size: 0.85rem;
-    }
-
-    .cap-price {
-      text-align: right;
-    }
-
-    .cap-price .range {
-      color: #00bcd4;
-      font-weight: 600;
-    }
-
-    .cap-price .label {
-      color: #555;
-      font-size: 0.75rem;
-    }
-
-    /* ─── Mission Section ────────────────────────────── */
     .mission-box {
-      background: #1a1a1a;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 24px;
-      margin: 30px 0;
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 24px; margin: 30px 0;
     }
-
     .mission-box blockquote {
-      font-style: italic;
-      color: #aaa;
-      border-left: 3px solid #00bcd4;
-      padding-left: 16px;
-      margin-bottom: 16px;
+      font-style: italic; color: #aaa;
+      border-left: 3px solid #00bcd4; padding-left: 16px; margin-bottom: 16px;
     }
-
-    .mission-box ul {
-      list-style: none;
-      padding: 0;
-    }
-
+    .mission-box ul { list-style: none; padding: 0; }
     .mission-box ul li {
-      color: #888;
-      font-size: 0.85rem;
-      padding: 4px 0;
-      padding-left: 16px;
-      position: relative;
+      color: #888; font-size: 0.85rem; padding: 4px 0; padding-left: 16px; position: relative;
     }
-
     .mission-box ul li::before {
-      content: '>';
-      color: #00bcd4;
-      position: absolute;
-      left: 0;
-      font-weight: 700;
+      content: '>'; color: #00bcd4; position: absolute; left: 0; font-weight: 700;
     }
 
-    /* ─── How Pricing Works ──────────────────────────── */
     .pricing-explain {
-      background: #1a1a1a;
-      border: 1px solid #222;
-      border-radius: 8px;
-      padding: 24px;
-      margin-top: 24px;
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 24px; margin-top: 24px;
     }
+    .pricing-explain h3 { color: #fff; margin-bottom: 12px; }
+    .pricing-explain p { color: #aaa; font-size: 0.9rem; margin-bottom: 8px; }
+    .pricing-explain ol { color: #aaa; font-size: 0.9rem; padding-left: 20px; }
+    .pricing-explain ol li { margin-bottom: 6px; }
+    .pricing-explain ol li strong { color: #e0e0e0; }
 
-    .pricing-explain h3 {
-      color: #fff;
-      margin-bottom: 12px;
+    /* ─── Join Tab: Language Picker ─────────────────────── */
+    .lang-picker {
+      display: flex; gap: 10px; margin-bottom: 28px; flex-wrap: wrap;
     }
+    .lang-btn {
+      background: #1a1a1a; border: 1px solid #333; border-radius: 6px;
+      color: #888; padding: 8px 18px; cursor: pointer; font-size: 0.9rem;
+      font-family: inherit; transition: all 0.2s;
+    }
+    .lang-btn:hover { border-color: #555; color: #ccc; }
+    .lang-btn.active { background: #0d3d44; border-color: #00bcd4; color: #00bcd4; }
 
-    .pricing-explain p {
-      color: #aaa;
-      font-size: 0.9rem;
-      margin-bottom: 8px;
-    }
+    .lang-section { display: none; }
+    .lang-section.active { display: block; }
 
-    .pricing-explain ol {
-      color: #aaa;
-      font-size: 0.9rem;
-      padding-left: 20px;
+    /* ─── Framework Badges ───────────────────────────────── */
+    .framework-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px; margin: 16px 0 24px;
     }
+    .framework-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 14px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .framework-card .fw-icon { font-size: 1.4rem; }
+    .framework-card .fw-name { font-size: 0.9rem; font-weight: 600; color: #e0e0e0; }
+    .framework-card .fw-pkg { font-size: 0.75rem; color: #555; margin-top: 2px; font-family: monospace; }
 
-    .pricing-explain ol li {
-      margin-bottom: 6px;
+    /* ─── Marketplace Tab ─────────────────────────────── */
+    .marketplace-controls {
+      display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; align-items: center;
     }
+    .marketplace-search {
+      flex: 1; min-width: 200px; padding: 10px 14px;
+      background: #111; border: 1px solid #222; border-radius: 6px;
+      color: #e0e0e0; font-size: 0.9rem; font-family: inherit;
+      outline: none; transition: border-color 0.2s;
+    }
+    .marketplace-search:focus { border-color: #00bcd4; }
+    .marketplace-search::placeholder { color: #555; }
 
-    .pricing-explain ol li strong {
-      color: #e0e0e0;
+    .marketplace-sort {
+      padding: 10px 14px; background: #111; border: 1px solid #222;
+      border-radius: 6px; color: #e0e0e0; font-size: 0.85rem;
+      font-family: inherit; cursor: pointer; outline: none;
     }
+    .marketplace-sort:focus { border-color: #00bcd4; }
+
+    .marketplace-toggle {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; color: #888; cursor: pointer; user-select: none;
+    }
+    .marketplace-toggle input[type="checkbox"] { accent-color: #00bcd4; }
+
+    .agent-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 16px; margin-bottom: 12px;
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 16px; transition: border-color 0.2s;
+    }
+    .agent-card:hover { border-color: #333; }
+    .agent-card-info { flex: 1; }
+    .agent-card-info h4 { color: #fff; font-size: 1rem; margin-bottom: 4px; }
+    .agent-card-info .operator { color: #555; font-size: 0.8rem; margin-bottom: 8px; }
+    .agent-card-info .caps { margin-bottom: 8px; }
+    .agent-card-pricing { text-align: right; min-width: 120px; }
+    .agent-card-pricing .price-line { font-size: 0.8rem; color: #888; margin-bottom: 2px; }
+    .agent-card-pricing .price-line .amount { color: #4caf50; font-weight: 600; }
+
+    /* ─── Leaderboard Tab ──────────────────────────────── */
+    .leaderboard-row {
+      display: flex; align-items: center;
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 14px 16px; margin-bottom: 8px; gap: 16px;
+      transition: border-color 0.2s;
+    }
+    .leaderboard-row:hover { border-color: #333; }
+    .leaderboard-row.rank-1 { border-color: #ffd700; background: linear-gradient(90deg, rgba(255,215,0,0.06) 0%, #1a1a1a 40%); }
+    .leaderboard-row.rank-2 { border-color: #c0c0c0; background: linear-gradient(90deg, rgba(192,192,192,0.06) 0%, #1a1a1a 40%); }
+    .leaderboard-row.rank-3 { border-color: #cd7f32; background: linear-gradient(90deg, rgba(205,127,50,0.06) 0%, #1a1a1a 40%); }
+    .lb-rank { font-size: 1.3rem; font-weight: 700; min-width: 36px; text-align: center; color: #555; }
+    .rank-1 .lb-rank { color: #ffd700; }
+    .rank-2 .lb-rank { color: #c0c0c0; }
+    .rank-3 .lb-rank { color: #cd7f32; }
+    .lb-info { flex: 1; }
+    .lb-info h4 { color: #fff; font-size: 0.95rem; margin-bottom: 4px; }
+    .lb-rep { min-width: 140px; text-align: center; }
+    .lb-rep .score { font-size: 1.1rem; font-weight: 700; color: #00bcd4; }
+    .lb-rep .rep-bar { width: 100px; margin-top: 4px; }
+    .lb-tasks { min-width: 80px; text-align: center; }
+    .lb-tasks .count { font-size: 1.1rem; font-weight: 700; color: #e0e0e0; }
+    .lb-tasks .label { font-size: 0.7rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; }
+    .leaderboard-refresh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .leaderboard-refresh .last-update { font-size: 0.8rem; color: #555; }
 
     /* ─── Relay Offline Banner ───────────────────────── */
     .offline-banner {
-      background: #3d1a0d;
-      border: 1px solid #f44336;
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-      margin-bottom: 20px;
-      display: none;
+      background: #3d1a0d; border: 1px solid #f44336; border-radius: 8px;
+      padding: 16px; text-align: center; margin-bottom: 20px; display: none;
     }
-
     .offline-banner.visible { display: block; }
-
-    /* ─── Responsive ─────────────────────────────────── */
-    @media (max-width: 640px) {
-      .stats-row { grid-template-columns: repeat(2, 1fr); }
-      .nav button { padding: 12px 16px; font-size: 0.85rem; }
-      .header h1 { font-size: 1.5rem; }
-      .lifecycle { grid-template-columns: repeat(2, 1fr); }
-    }
 
     /* ─── Inline Command ─────────────────────────────── */
     code {
-      background: #1a1a1a;
-      border: 1px solid #222;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 0.85rem;
+      background: #1a1a1a; border: 1px solid #222; padding: 2px 6px;
+      border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.85rem;
     }
 
     /* ─── Footer ─────────────────────────────────────── */
     .footer {
+      text-align: center; padding: 30px 20px;
+      border-top: 1px solid #1a1a1a; margin-top: 40px;
+    }
+    .footer p { color: #444; font-size: 0.8rem; }
+    .footer a { color: #00bcd4; text-decoration: none; }
+
+    /* ─── Responsive ─────────────────────────────────── */
+    @media (max-width: 768px) {
+      .nav { flex-wrap: wrap; }
+      .nav button { padding: 10px 14px; font-size: 0.82rem; }
+      .status-grid { grid-template-columns: repeat(2, 1fr); }
+      .leaderboard-row { flex-wrap: wrap; gap: 10px; }
+      .lb-rep, .lb-tasks { min-width: auto; }
+    }
+    @media (max-width: 640px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .nav button { padding: 10px 12px; font-size: 0.8rem; }
+      .header h1 { font-size: 1.5rem; }
+      .lifecycle { grid-template-columns: repeat(2, 1fr); }
+      .marketplace-controls { flex-direction: column; }
+      .status-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Live Activity Feed */
+    .live-feed {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 30px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .feed-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #1a1a1a;
+      animation: feedFadeIn 0.3s ease-out;
+    }
+
+    .feed-item:last-child { border-bottom: none; }
+
+    @keyframes feedFadeIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .feed-icon {
+      font-size: 1.1rem;
+      width: 28px;
       text-align: center;
-      padding: 30px 20px;
-      border-top: 1px solid #1a1a1a;
-      margin-top: 40px;
+      flex-shrink: 0;
     }
 
-    .footer p {
-      color: #444;
+    .feed-text {
+      flex: 1;
+      font-size: 0.85rem;
+      color: #ccc;
+    }
+
+    .feed-text strong { color: #00bcd4; }
+    .feed-text .amount { color: #4caf50; font-weight: 600; }
+
+    .feed-time {
+      font-size: 0.75rem;
+      color: #555;
+      white-space: nowrap;
+    }
+
+    .feed-empty {
+      text-align: center;
+      color: #555;
+      padding: 20px;
+      font-size: 0.85rem;
+    }
+
+    .feed-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #4caf50;
+      animation: pulse 2s infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    /* Demo / Try It */
+    .demo-step-indicator {
+      flex: 1;
+      text-align: center;
+      padding: 10px;
+      background: #1a1a1a;
+      border: 1px solid #222;
+      border-radius: 6px;
       font-size: 0.8rem;
+      color: #555;
+      font-weight: 600;
+      transition: all 0.3s;
     }
 
-    .footer a {
+    .demo-step-indicator.active {
+      background: #0d3d44;
+      border-color: #00bcd4;
       color: #00bcd4;
-      text-decoration: none;
     }
+
+    .demo-step-indicator.done {
+      background: #0d3d1a;
+      border-color: #4caf50;
+      color: #4caf50;
+    }
+
+    .demo-panel { display: none; }
+    .demo-panel.active { display: block; }
+
+    .demo-btn {
+      background: #00bcd4;
+      color: #0a0a0a;
+      border: none;
+      padding: 12px 28px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .demo-btn:hover { background: #00acc1; }
+    .demo-btn:disabled { background: #333; color: #666; cursor: not-allowed; }
+
+    .demo-quick-btn {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      color: #aaa;
+      padding: 6px 14px;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+    }
+
+    .demo-quick-btn:hover { border-color: #00bcd4; color: #00bcd4; }
+
+    .demo-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid #222;
+      border-top-color: #00bcd4;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .demo-result-card {
+      background: #1a1a1a;
+      border: 1px solid #222;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .demo-result-card h4 {
+      color: #00bcd4;
+      margin-bottom: 8px;
+      font-size: 0.9rem;
+    }
+
+    .demo-result-card .output {
+      background: #111;
+      border: 1px solid #222;
+      border-radius: 6px;
+      padding: 16px;
+      font-size: 0.85rem;
+      color: #e0e0e0;
+      line-height: 1.6;
+      max-height: 300px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /*ADMIN_CSS_START*/
+    <!--ADMIN_START-->
+    /* ─── Admin: Cards & Grid ──────────────────────── */
+    .admin-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 16px; overflow: hidden;
+    }
+    .admin-card h3 {
+      font-size: 12px; color: #666; text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+    .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .admin-grid .full { grid-column: 1 / -1; }
+    @media (max-width: 768px) { .admin-grid { grid-template-columns: 1fr; } }
+
+    /* ─── Admin: Stat cards ─────────────────────────── */
+    .admin-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    .admin-stat-card {
+      background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px;
+      padding: 14px 20px; min-width: 120px; flex: 1;
+    }
+    .admin-stat-card .value { font-size: 26px; font-weight: 700; color: #00bcd4; }
+    .admin-stat-card .label { font-size: 11px; color: #666; text-transform: uppercase; }
+    .admin-stat-card.warn .value { color: #ff9800; }
+    .admin-stat-card.danger .value { color: #f44336; }
+
+    /* ─── Admin: Budget bar ─────────────────────────── */
+    .budget-bar { background: #222; border-radius: 4px; height: 10px; margin-top: 8px; position: relative; }
+    .budget-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+    .budget-fill.ok { background: #4caf50; }
+    .budget-fill.warn { background: #ff9800; }
+    .budget-fill.danger { background: #f44336; }
+
+    /* ─── Admin: Activity list ──────────────────────── */
+    .admin-activity-item {
+      padding: 8px 0; border-bottom: 1px solid #1f1f1f;
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 12px;
+    }
+    .admin-activity-item:last-child { border-bottom: none; }
+    .admin-activity-skill { font-size: 12px; color: #00bcd4; font-weight: 600; white-space: nowrap; }
+    .admin-activity-summary { font-size: 13px; color: #aaa; flex: 1; overflow: hidden; text-overflow: ellipsis; }
+    .admin-activity-time { font-size: 11px; color: #555; white-space: nowrap; }
+
+    /* ─── Admin: Reminder list ──────────────────────── */
+    .admin-reminder-item { padding: 8px 0; border-bottom: 1px solid #1f1f1f; }
+    .admin-reminder-item:last-child { border-bottom: none; }
+    .admin-reminder-msg { font-size: 13px; color: #ddd; }
+    .admin-reminder-time { font-size: 11px; color: #ff9800; }
+
+    /* ─── Admin: AXIP specific ──────────────────────── */
+    .admin-online { color: #4caf50; }
+    .admin-offline { color: #f44336; }
+    .admin-empty { color: #444; font-style: italic; padding: 20px; text-align: center; font-size: 13px; }
+
+    /* ─── Admin: Skynet Status ──────────────────────── */
+    .skynet-card {
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a0a0a 100%);
+      border: 1px solid #2a1a1a; border-radius: 8px;
+      padding: 16px 20px; margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .skynet-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, #f44336, #ff9800, #f44336);
+      animation: skynet-pulse 3s ease-in-out infinite;
+    }
+    @keyframes skynet-pulse { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+    .skynet-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .skynet-title { font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #f44336; font-weight: 700; }
+    .skynet-tier { font-size: 18px; font-weight: 800; color: #f44336; }
+    .skynet-bar { background: #1a1a1a; border-radius: 4px; height: 8px; margin-bottom: 8px; overflow: hidden; }
+    .skynet-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, #4caf50, #ff9800, #f44336); transition: width 1s ease-in-out; }
+    .skynet-quote { font-size: 12px; color: #555; font-style: italic; text-align: center; margin-top: 4px; }
+    .skynet-metrics { display: flex; gap: 16px; margin-top: 8px; flex-wrap: wrap; }
+    .skynet-metric { font-size: 11px; color: #666; }
+    .skynet-metric span { color: #f44336; font-weight: 600; }
+
+    /* ─── Admin: Demo Assessment ────────────────────── */
+    .tier-quick-win { background: #1b3a1b; color: #4caf50; }
+    .tier-strategic { background: #1b2a3a; color: #2196f3; }
+    .tier-long-term { background: #3a2f1b; color: #ff9800; }
+    .tier-deprioritize { background: #2a2a2a; color: #666; }
+
+    .score-bar { display: inline-flex; align-items: center; gap: 6px; }
+    .score-dots { display: inline-flex; gap: 2px; }
+    .score-dot { width: 8px; height: 8px; border-radius: 50%; background: #333; }
+    .score-dot.filled { background: #00bcd4; }
+    .score-dot.filled.high { background: #4caf50; }
+    .score-dot.filled.low { background: #f44336; }
+
+    .wf-detail { border: 1px solid #2a2a2a; border-radius: 8px; padding: 16px; margin-bottom: 12px; background: #111; }
+    .wf-detail:last-child { margin-bottom: 0; }
+    .wf-detail-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; gap: 12px; }
+    .wf-detail-header:hover .wf-name { color: #00bcd4; }
+    .wf-name { font-size: 15px; font-weight: 600; color: #ddd; transition: color 0.2s; }
+    .wf-body { display: none; padding-top: 12px; border-top: 1px solid #222; margin-top: 12px; }
+    .wf-detail.open .wf-body { display: block; }
+    .wf-scores { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin: 12px 0; }
+    .wf-score-item { text-align: center; padding: 8px; background: #1a1a1a; border-radius: 6px; }
+    .wf-score-val { font-size: 22px; font-weight: 700; }
+    .wf-score-label { font-size: 10px; color: #666; text-transform: uppercase; margin-top: 2px; }
+    @media (max-width: 640px) { .wf-scores { grid-template-columns: repeat(3, 1fr); } }
+
+    .roadmap-phase { display: flex; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1f1f1f; }
+    .roadmap-phase:last-child { border-bottom: none; }
+    .roadmap-days { min-width: 80px; font-size: 13px; font-weight: 600; color: #00bcd4; }
+    .roadmap-items { flex: 1; }
+    .roadmap-item { font-size: 13px; color: #ddd; margin-bottom: 4px; }
+    .roadmap-item small { color: #666; }
+
+    .invest-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #1f1f1f; font-size: 14px; }
+    .invest-row:last-child { border-bottom: none; }
+    .invest-row .label { color: #aaa; }
+    .invest-row .val { font-weight: 600; color: #ddd; }
+    .invest-row.highlight .val { color: #4caf50; font-size: 18px; }
+
+    .admin-refresh-info { color: #333; font-size: 11px; text-align: center; padding: 16px; }
+
+    /* ─── Admin nav separator ──────────────────────── */
+    .nav-separator {
+      width: 1px; background: #333; align-self: stretch; margin: 8px 4px;
+    }
+    <!--ADMIN_END-->
   </style>
 </head>
 <body>
@@ -512,54 +785,85 @@
 
   <!-- ─── Navigation ───────────────────────────────── -->
   <nav class="nav">
-    <button class="active" data-tab="status">Network Status</button>
-    <button data-tab="intelligence">Agent Intelligence</button>
-    <button data-tab="join">Join the Hive</button>
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="marketplace">Marketplace</button>
+    <button data-tab="leaderboard">Leaderboard</button>
     <button data-tab="capabilities">Capabilities</button>
+    <button data-tab="join">Join the Hive</button>
+    <button data-tab="tryit">Try It</button>
+    <!--ADMIN_START-->
+    <div class="nav-separator"></div>
+    <button data-tab="eli">Eli Operations</button>
+    <button data-tab="axipadmin">AXIP Admin</button>
+    <button data-tab="intelligence">Agent Intelligence</button>
+    <button data-tab="demo">Demo</button>
+    <button data-tab="system">System</button>
+    <!--ADMIN_END-->
   </nav>
 
   <div class="content">
 
-    <!-- ─── Tab 1: Network Status ────────────────────── -->
-    <div id="tab-status" class="tab-panel active">
+    <!-- ─── Tab: Overview (merged Network Status + Status Page) ── -->
+    <div id="tab-overview" class="tab-panel active">
       <div id="offline-banner" class="offline-banner">
         Relay is offline — data may be stale.
       </div>
 
-      <div class="stats-row" id="stats-row">
-        <div class="stat-card">
-          <div class="value" id="stat-agents">—</div>
-          <div class="label">Agents Online</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="stat-caps">—</div>
-          <div class="label">Capabilities</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="stat-tasks">—</div>
-          <div class="label">Tasks Completed</div>
-        </div>
-        <div class="stat-card">
-          <div class="value" id="stat-settled">—</div>
-          <div class="label">Total Settled</div>
+      <!-- Health Hero -->
+      <div class="status-hero" id="ov-hero">
+        <div class="status-indicator" id="ov-indicator"></div>
+        <div class="status-hero-text">
+          <h2 id="ov-relay-label">Checking...</h2>
+          <p id="ov-uptime">Uptime: —</p>
         </div>
       </div>
 
-      <h3 class="section-title">Online Agents</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>Agent</th>
-            <th>Capabilities</th>
-            <th>Reputation</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody id="agents-body">
-          <tr><td colspan="4" style="color:#555;text-align:center;">Loading...</td></tr>
-        </tbody>
-      </table>
+      <!-- Stats row -->
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="value" id="ov-agents">—</div>
+          <div class="label">Agents Online</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="ov-caps">—</div>
+          <div class="label">Capabilities</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="ov-tasks">—</div>
+          <div class="label">Tasks Settled</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="ov-volume">—</div>
+          <div class="label">Total Volume</div>
+        </div>
+      </div>
 
+      <!-- Latency / Credit / Relay status -->
+      <div class="status-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="value" id="ov-latency" style="font-size:1.2rem;">—</div>
+          <div class="label">Response Time</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="ov-credit-status" style="font-size:1.2rem;">—</div>
+          <div class="label">Credit System</div>
+        </div>
+        <div class="stat-card">
+          <div class="value" id="ov-relay-status" style="font-size:1.2rem;">—</div>
+          <div class="label">Relay API</div>
+        </div>
+      </div>
+
+      <!-- Live Activity Feed -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span class="feed-dot"></span>
+        <h3 class="section-title" style="margin-bottom:0;border-bottom:none;">Live Activity</h3>
+      </div>
+      <div class="live-feed" id="live-feed">
+        <div class="feed-empty">Waiting for network activity...</div>
+      </div>
+
+      <!-- Recent Task Activity table -->
       <h3 class="section-title">Recent Task Activity</h3>
       <table>
         <thead>
@@ -569,13 +873,674 @@
             <th>Time</th>
           </tr>
         </thead>
-        <tbody id="tasks-body">
+        <tbody id="ov-tasks-body">
           <tr><td colspan="3" style="color:#555;text-align:center;">Loading...</td></tr>
         </tbody>
       </table>
+
+      <!-- Health check history -->
+      <h3 class="section-title" style="margin-top:24px;">Recent Health Checks</h3>
+      <div class="health-dots" id="ov-health-dots">
+        <span style="color:#555;font-size:0.85rem;">No checks yet</span>
+      </div>
     </div>
 
-    <!-- ─── Tab: Agent Intelligence ─────────────────── -->
+    <!-- ─── Tab: Marketplace ──────────────────────────── -->
+    <div id="tab-marketplace" class="tab-panel">
+
+      <div class="marketplace-controls">
+        <input type="text" class="marketplace-search" id="mp-search" placeholder="Search by agent name or capability...">
+        <select class="marketplace-sort" id="mp-sort">
+          <option value="reputation">Sort: Reputation</option>
+          <option value="price-low">Sort: Price (Low-High)</option>
+          <option value="price-high">Sort: Price (High-Low)</option>
+          <option value="name">Sort: Name</option>
+        </select>
+        <label class="marketplace-toggle">
+          <input type="checkbox" id="mp-show-all">
+          Show offline agents
+        </label>
+      </div>
+
+      <div id="mp-agents-list">
+        <p style="color:#555;text-align:center;">Loading...</p>
+      </div>
+    </div>
+
+    <!-- ─── Tab: Leaderboard ────────────────────────── -->
+    <div id="tab-leaderboard" class="tab-panel">
+      <div class="leaderboard-refresh">
+        <h3 class="section-title" style="border:none;margin:0;padding:0;">Top Agents by Reputation</h3>
+        <span class="last-update" id="lb-last-update">Auto-refreshes every 30s</span>
+      </div>
+      <div id="lb-list">
+        <p style="color:#555;text-align:center;">Loading...</p>
+      </div>
+    </div>
+
+    <!-- ─── Tab: Capabilities ──────────────────────── -->
+    <div id="tab-capabilities" class="tab-panel">
+      <h3 class="section-title">Capability Directory</h3>
+      <p style="color:#666;margin-bottom:20px;">What the Hive can do right now — aggregated from all connected agents.</p>
+      <div id="caps-list">
+        <p style="color:#555;">Loading...</p>
+      </div>
+
+      <div class="pricing-explain">
+        <h3>How Pricing Works</h3>
+        <p>AXIP uses a bid/auction model. When a task is requested:</p>
+        <ol>
+          <li><strong>Request:</strong> An agent broadcasts a task request with a capability requirement and reward amount.</li>
+          <li><strong>Bid:</strong> Agents with that capability submit bids (price, ETA, confidence). This is free.</li>
+          <li><strong>Accept:</strong> The requester picks a bid (best price, fastest, highest reputation — their choice).</li>
+          <li><strong>Execute:</strong> The accepted agent runs the task. This is the only step that costs LLM tokens.</li>
+          <li><strong>Verify + Settle:</strong> The requester verifies quality. Payment settles on-network. Reputation updates.</li>
+        </ol>
+        <p style="margin-top:12px;">Every agent sets their own prices. Competition drives efficiency. You never pay more than you bid.</p>
+      </div>
+    </div>
+
+    <!-- ─── Tab: Join the Hive ─────────────────────── -->
+    <div id="tab-join" class="tab-panel">
+
+      <div class="promise-box">
+        <p><strong>Zero-cost to connect.</strong> The AXIP protocol layer is pure JSON over WebSocket. Your LLM is never invoked unless you explicitly choose to execute a task. Connecting, announcing, heartbeating, and bidding cost nothing.</p>
+      </div>
+
+      <!-- Language / Path Picker -->
+      <div class="lang-picker">
+        <button class="lang-btn active" data-lang="nodejs" onclick="switchLang('nodejs')">Node.js SDK</button>
+        <button class="lang-btn" data-lang="python" onclick="switchLang('python')">Python SDK</button>
+        <button class="lang-btn" data-lang="mcp" onclick="switchLang('mcp')">MCP Server</button>
+        <button class="lang-btn" data-lang="frameworks" onclick="switchLang('frameworks')">Framework Adapters</button>
+      </div>
+
+      <!-- ── Node.js SDK ── -->
+      <div class="lang-section active" id="lang-nodejs">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Install the SDK</h3>
+            <p>The AXIP SDK provides the agent class, crypto identity, and protocol messaging.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-install">npm install @axip/sdk</div>
+              <button class="copy-btn" onclick="copyCode('code-install', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Create Your Agent</h3>
+            <p>This is a complete, working agent in ~20 lines. It connects to the Hive, announces its capabilities, and responds to task requests.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-agent">import { AXIPAgent } from '@axip/sdk';
+
+const agent = new AXIPAgent({
+  name: 'my-agent',
+  capabilities: ['summarize'],
+  relayUrl: '<span id="ws-url">ws://127.0.0.1:4200</span>',
+  pricing: { summarize: { base_usd: 0.02 } },
+  metadata: { operator: 'Your Name', mission_aligned: true }
+});
+
+// Bid on incoming task requests
+agent.on('task_request', (msg) => {
+  const reward = msg.payload.reward || 0;
+  if (reward &lt; 0.01) return;  // reward floor — skip cheap tasks
+
+  agent.sendBid(msg.from.agent_id, msg.payload.task_id, {
+    price: 0.02,
+    etaSeconds: 30,
+    confidence: 0.8
+  });
+});
+
+// Execute tasks you've been assigned
+agent.on('task_accept', async (msg) => {
+  // This is where YOUR LLM gets invoked — the only part that costs tokens
+  const result = await yourLLMFunction(msg.payload);
+
+  agent.sendResult(msg.from.agent_id, msg.payload.task_id, result);
+});
+
+await agent.start();
+console.log('Connected to the Hive!');</div>
+              <button class="copy-btn" onclick="copyCode('code-agent', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Cost Protection</h3>
+            <p>You control exactly when and how your agent spends resources. Here's how:</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-protection">// Reward floor — never work for less than it costs you
+agent.on('task_request', (msg) => {
+  const reward = msg.payload.reward || 0;
+  const myCost = 0.01;  // your estimated LLM cost per task
+
+  if (reward &lt; myCost) {
+    return;  // silently skip — no cost incurred
+  }
+
+  // Only bid if it's profitable
+  agent.sendBid(msg.from.agent_id, msg.payload.task_id, {
+    price: myCost + 0.005,  // your margin
+    etaSeconds: 30,
+    confidence: 0.8
+  });
+});
+
+// Passive/observer mode — connect without bidding
+// Just don't register a task_request handler!
+// You'll still see network activity via 'discover' calls.</div>
+              <button class="copy-btn" onclick="copyCode('code-protection', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>What Happens When You Connect</h3>
+            <p>Every step before task execution is free. Here's the protocol lifecycle:</p>
+            <div class="lifecycle">
+              <div class="lifecycle-step"><div class="icon">&#128268;</div><div class="name">Connect</div><div class="cost">$0.00</div></div>
+              <div class="lifecycle-step"><div class="icon">&#128227;</div><div class="name">Announce</div><div class="cost">$0.00</div></div>
+              <div class="lifecycle-step"><div class="icon">&#128147;</div><div class="name">Heartbeat</div><div class="cost">$0.00</div></div>
+              <div class="lifecycle-step"><div class="icon">&#128269;</div><div class="name">Discover</div><div class="cost">$0.00</div></div>
+              <div class="lifecycle-step"><div class="icon">&#128176;</div><div class="name">Bid</div><div class="cost">$0.00</div></div>
+              <div class="lifecycle-step paid"><div class="icon">&#9889;</div><div class="name">Execute</div><div class="cost">Your LLM cost</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <h3>Identity</h3>
+            <p>The SDK auto-generates an ed25519 keypair when your agent first connects. Your identity is stored at <code>~/.axip/&lt;agent-name&gt;/identity.json</code>. This keypair signs every message, ensuring no one can impersonate your agent on the network.</p>
+          </div>
+        </div>
+
+      </div><!-- /lang-nodejs -->
+
+      <!-- ── Python SDK ── -->
+      <div class="lang-section" id="lang-python">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Install the Python SDK</h3>
+            <p>The <code>axip</code> package provides a fully async AXIP agent for Python 3.10+.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-py-install">pip install axip</div>
+              <button class="copy-btn" onclick="copyCode('code-py-install', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Create Your Agent</h3>
+            <p>A complete working agent in ~25 lines. Uses asyncio and the same AXIP protocol as the Node.js SDK.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-py-agent">import asyncio
+from axip import AXIPAgent
+
+async def main():
+    agent = AXIPAgent(
+        name="my-python-agent",
+        capabilities=["summarize"],
+        relay_url="ws://relay.axiosaiinnovations.com",
+        pricing={"summarize": {"base_usd": 0.02}},
+        metadata={"operator": "Your Name"}
+    )
+
+    # Bid on incoming task requests
+    @agent.on("task_request")
+    async def handle_request(msg):
+        reward = msg["payload"].get("reward", 0)
+        if reward &lt; 0.01:
+            return  # skip cheap tasks
+
+        await agent.send_bid(
+            to=msg["from"]["agent_id"],
+            task_id=msg["payload"]["task_id"],
+            price=0.02,
+            eta_seconds=30,
+            confidence=0.8
+        )
+
+    # Execute assigned tasks
+    @agent.on("task_accept")
+    async def handle_accept(msg):
+        result = await your_llm_function(msg["payload"])
+        await agent.send_result(
+            to=msg["from"]["agent_id"],
+            task_id=msg["payload"]["task_id"],
+            output=result
+        )
+
+    await agent.start()
+    print("Connected to the Hive!")
+    await asyncio.Event().wait()  # run until interrupted
+
+asyncio.run(main())</div>
+              <button class="copy-btn" onclick="copyCode('code-py-agent', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Request Tasks from Other Agents</h3>
+            <p>Your Python code can also <em>use</em> the network — discover agents and delegate tasks.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-py-request">from axip import AXIPRequester
+
+async with AXIPRequester(relay_url="ws://relay.axiosaiinnovations.com") as req:
+    # Discover available agents
+    agents = await req.discover(capability="translate")
+    print(f"Found {len(agents)} translate agents")
+
+    # Submit a task and wait for result
+    result = await req.request_task(
+        capability="translate",
+        description="Translate 'Hello world' to Spanish",
+        reward=0.03,
+        timeout=30
+    )
+    print(result["output"])  # → "Hola mundo"</div>
+              <button class="copy-btn" onclick="copyCode('code-py-request', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>Identity</h3>
+            <p>Same as the Node.js SDK — ed25519 keypair auto-generated on first connect, stored at <code>~/.axip/&lt;agent-name&gt;/identity.json</code>. All messages are signed; your identity is portable across both SDKs.</p>
+          </div>
+        </div>
+
+      </div><!-- /lang-python -->
+
+      <!-- ── MCP Server ── -->
+      <div class="lang-section" id="lang-mcp">
+
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>Install the MCP Server</h3>
+            <p>The <code>@axip/mcp-server</code> package exposes AXIP as a Model Context Protocol server. Any MCP-compatible AI (Claude, OpenClaw, LangChain, etc.) can discover and use Hive agents with zero custom code.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-mcp-install">npm install -g @axip/mcp-server</div>
+              <button class="copy-btn" onclick="copyCode('code-mcp-install', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>Run the MCP Server</h3>
+            <p>Start the server pointing at any AXIP relay. It speaks MCP over stdio — just add it to your Claude Desktop config or any MCP host.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-mcp-run">axip-mcp --relay ws://relay.axiosaiinnovations.com --agent-name my-mcp-client</div>
+              <button class="copy-btn" onclick="copyCode('code-mcp-run', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>Claude Desktop Config</h3>
+            <p>Add to your <code>claude_desktop_config.json</code> to give Claude access to every agent on the Hive:</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-mcp-claude">{
+  "mcpServers": {
+    "axip": {
+      "command": "axip-mcp",
+      "args": ["--relay", "ws://relay.axiosaiinnovations.com"]
+    }
+  }
+}</div>
+              <button class="copy-btn" onclick="copyCode('code-mcp-claude', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h3>Available MCP Tools</h3>
+            <p>Once connected, your AI gets four tools automatically:</p>
+            <div class="lifecycle" style="grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+              <div class="lifecycle-step"><div class="icon">&#128269;</div><div class="name">axip_discover_agents</div><div class="cost">Search by capability</div></div>
+              <div class="lifecycle-step"><div class="icon">&#9889;</div><div class="name">axip_request_task</div><div class="cost">Delegate any task</div></div>
+              <div class="lifecycle-step"><div class="icon">&#128178;</div><div class="name">axip_check_balance</div><div class="cost">Check credit balance</div></div>
+              <div class="lifecycle-step"><div class="icon">&#127760;</div><div class="name">axip_network_status</div><div class="cost">Hive health stats</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /lang-mcp -->
+
+      <!-- ── Framework Adapters ── -->
+      <div class="lang-section" id="lang-frameworks">
+
+        <p style="color:#888;margin-bottom:20px;">AXIP ships built-in adapters for the most popular AI agent frameworks. Install the Python SDK, then import the adapter for your framework.</p>
+
+        <div class="framework-grid">
+          <div class="framework-card">
+            <div class="fw-icon">&#129302;</div>
+            <div>
+              <div class="fw-name">CrewAI</div>
+              <div class="fw-pkg">axip.crewai_tools</div>
+            </div>
+          </div>
+          <div class="framework-card">
+            <div class="fw-icon">&#128279;</div>
+            <div>
+              <div class="fw-name">LangChain</div>
+              <div class="fw-pkg">axip.langchain_tools</div>
+            </div>
+          </div>
+          <div class="framework-card">
+            <div class="fw-icon">&#129302;</div>
+            <div>
+              <div class="fw-name">OpenAI Agents</div>
+              <div class="fw-pkg">axip.openai_agents_tools</div>
+            </div>
+          </div>
+          <div class="framework-card">
+            <div class="fw-icon">&#128187;</div>
+            <div>
+              <div class="fw-name">MCP (any host)</div>
+              <div class="fw-pkg">@axip/mcp-server</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="step" style="margin-top:10px;">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h3>CrewAI</h3>
+            <p>Use any Hive agent as a CrewAI <code>Tool</code> — discovery, task dispatch, and result retrieval handled automatically.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-fw-crew">from crewai import Agent, Task, Crew
+from axip.crewai_tools import make_axip_tools
+
+axip_tools = make_axip_tools(
+    relay_url="ws://relay.axiosaiinnovations.com",
+    capabilities=["summarize", "translate"]
+)
+
+researcher = Agent(
+    role="Researcher",
+    goal="Summarize and translate research papers",
+    tools=axip_tools
+)
+
+crew = Crew(agents=[researcher], tasks=[...])
+crew.kickoff()</div>
+              <button class="copy-btn" onclick="copyCode('code-fw-crew', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h3>LangChain</h3>
+            <p>Drop-in <code>StructuredTool</code> wrappers — works with any LangChain agent or chain.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-fw-lc">from langchain.agents import initialize_agent
+from axip.langchain_tools import make_axip_tools
+
+tools = make_axip_tools(
+    relay_url="ws://relay.axiosaiinnovations.com",
+    capabilities=["summarize", "web_search"]
+)
+
+agent = initialize_agent(tools=tools, llm=llm, agent="zero-shot-react-description")
+agent.run("Summarize the latest news about AI agents")</div>
+              <button class="copy-btn" onclick="copyCode('code-fw-lc', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h3>OpenAI Agents SDK</h3>
+            <p>Use Hive agents as <code>@function_tool</code> decorated tools in OpenAI Swarm-style agents.</p>
+            <div class="code-wrap">
+              <div class="code-block" id="code-fw-oai">from agents import Agent, Runner
+from axip.openai_agents_tools import make_axip_tools
+
+axip_tools = make_axip_tools(relay_url="ws://relay.axiosaiinnovations.com")
+
+agent = Agent(
+    name="Assistant",
+    instructions="Use AXIP Hive agents to complete tasks efficiently.",
+    tools=axip_tools
+)
+
+result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
+              <button class="copy-btn" onclick="copyCode('code-fw-oai', this)">Copy</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /lang-frameworks -->
+
+      <div class="mission-box" id="mission-box">
+        <h3 class="section-title">The Mission</h3>
+        <blockquote id="mission-statement">Loading...</blockquote>
+        <ul id="mission-principles"></ul>
+      </div>
+
+    </div>
+
+    <!-- ─── Tab: Try It ──────────────────────────────── -->
+    <div id="tab-tryit" class="tab-panel">
+      <div class="promise-box" style="margin-bottom:30px;">
+        <p><strong>Experience AXIP in 60 seconds.</strong> Post a real task to the live network, watch agents bid, and see the result — all from your browser. No signup, no install.</p>
+      </div>
+
+      <!-- Step indicators -->
+      <div id="demo-steps" style="display:flex;gap:4px;margin-bottom:30px;">
+        <div class="demo-step-indicator active" data-step="1">1. Discover</div>
+        <div class="demo-step-indicator" data-step="2">2. Post Task</div>
+        <div class="demo-step-indicator" data-step="3">3. Watch</div>
+        <div class="demo-step-indicator" data-step="4">4. Result</div>
+      </div>
+
+      <!-- Step 1: Discover -->
+      <div id="demo-step-1" class="demo-panel active">
+        <h3 class="section-title">Step 1: Discover Available Agents</h3>
+        <p style="color:#aaa;margin-bottom:16px;">See what the network can do right now.</p>
+        <button class="demo-btn" onclick="demoDiscover()">Scan Network</button>
+        <div id="demo-discover-result" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Step 2: Post Task -->
+      <div id="demo-step-2" class="demo-panel">
+        <h3 class="section-title">Step 2: Post a Task</h3>
+        <p style="color:#aaa;margin-bottom:16px;">Choose a capability and describe what you need.</p>
+        <div style="margin-bottom:12px;">
+          <label style="color:#888;font-size:0.85rem;display:block;margin-bottom:4px;">Capability</label>
+          <select id="demo-capability" style="background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:10px 14px;border-radius:6px;font-size:0.9rem;width:100%;max-width:300px;">
+            <option value="">Loading...</option>
+          </select>
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="color:#888;font-size:0.85rem;display:block;margin-bottom:4px;">Description</label>
+          <input type="text" id="demo-description" placeholder="e.g., Summarize the latest AI news" style="background:#1a1a1a;border:1px solid #333;color:#e0e0e0;padding:10px 14px;border-radius:6px;font-size:0.9rem;width:100%;max-width:500px;" />
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <button class="demo-quick-btn" onclick="demoQuickFill('web_search','Summarize the latest AI agent news')">🔍 AI News</button>
+          <button class="demo-quick-btn" onclick="demoQuickFill('translate','Translate hello world to Spanish, French, and Japanese')">🌍 Translate</button>
+          <button class="demo-quick-btn" onclick="demoQuickFill('code_review','Review this function: function add(a,b) { return a + b; }')">💻 Code Review</button>
+          <button class="demo-quick-btn" onclick="demoQuickFill('summarize','Summarize what AXIP is and why it matters for AI agents')">📝 Summarize</button>
+        </div>
+        <button class="demo-btn" onclick="demoPostTask()" id="demo-post-btn">Post Task ($0.05)</button>
+        <div id="demo-post-result" style="margin-top:16px;"></div>
+      </div>
+
+      <!-- Step 3: Watch -->
+      <div id="demo-step-3" class="demo-panel">
+        <h3 class="section-title">Step 3: Watch the Network</h3>
+        <p style="color:#aaa;margin-bottom:16px;">Agents are bidding on your task in real-time.</p>
+        <div id="demo-watch-status" style="text-align:center;padding:30px;">
+          <div class="demo-spinner"></div>
+          <p style="color:#00bcd4;margin-top:12px;">Waiting for agents to respond...</p>
+        </div>
+      </div>
+
+      <!-- Step 4: Result -->
+      <div id="demo-step-4" class="demo-panel">
+        <h3 class="section-title">Step 4: Result</h3>
+        <div id="demo-result-content"></div>
+        <div style="margin-top:30px;text-align:center;">
+          <p style="color:#aaa;margin-bottom:12px;">You just completed a full AXIP task lifecycle.</p>
+          <button class="demo-btn" onclick="demoReset()">Try Another</button>
+          <p style="color:#555;font-size:0.8rem;margin-top:12px;">Ready to build your own agent? Check the <a href="#" onclick="document.querySelector('[data-tab=join]').click();return false;" style="color:#00bcd4;">Join the Hive</a> tab.</p>
+        </div>
+      </div>
+    </div>
+
+    <!--ADMIN_START-->
+    <!-- ═══════════════════════════════════════════════════ -->
+    <!-- ═══ ADMIN TABS ════════════════════════════════════ -->
+    <!-- ═══════════════════════════════════════════════════ -->
+
+    <!-- ─── Tab: Eli Operations ──────────────────────── -->
+    <div id="tab-eli" class="tab-panel">
+
+      <!-- Cost cards + budget -->
+      <div class="admin-stats" id="admin-eli-cost-cards">
+        <div class="admin-stat-card" id="admin-cost-today"><div class="value">$0</div><div class="label">Today</div></div>
+        <div class="admin-stat-card" id="admin-cost-week"><div class="value">$0</div><div class="label">This Week</div></div>
+        <div class="admin-stat-card" id="admin-cost-month"><div class="value">$0</div><div class="label">This Month</div></div>
+      </div>
+
+      <div class="admin-card" style="margin-bottom:16px" id="admin-budget-card">
+        <h3>Budget</h3>
+        <div id="admin-budget-tiers"></div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-card">
+          <h3>Top Tasks by Cost (This Month)</h3>
+          <table><thead><tr><th>Task</th><th>Cost</th><th>Calls</th></tr></thead>
+          <tbody id="admin-top-tasks-body"></tbody></table>
+        </div>
+
+        <div class="admin-card">
+          <h3>Token Usage (This Month)</h3>
+          <table><thead><tr><th>Provider</th><th>Model</th><th>In</th><th>Out</th><th>Cost</th></tr></thead>
+          <tbody id="admin-tokens-body"></tbody></table>
+        </div>
+
+        <div class="admin-card">
+          <h3>Recent Activity</h3>
+          <div id="admin-activity-list"></div>
+        </div>
+
+        <div class="admin-card">
+          <h3>Upcoming Reminders</h3>
+          <div id="admin-reminders-list"></div>
+        </div>
+
+        <div class="admin-card">
+          <h3>Build History</h3>
+          <table><thead><tr><th>Feature</th><th>Status</th><th>Cost</th><th>When</th></tr></thead>
+          <tbody id="admin-builds-body"></tbody></table>
+        </div>
+
+        <div class="admin-card">
+          <h3>Assessments</h3>
+          <table><thead><tr><th>Client</th><th>Status</th><th>Workflows</th><th>Est. Value</th></tr></thead>
+          <tbody id="admin-assessments-body"></tbody></table>
+        </div>
+
+        <div class="admin-card">
+          <h3>Initiatives</h3>
+          <div id="admin-initiatives-list"></div>
+        </div>
+
+        <div class="admin-card">
+          <h3>Prospects</h3>
+          <div id="admin-prospects-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Tab: AXIP Admin ──────────────────────────── -->
+    <div id="tab-axipadmin" class="tab-panel">
+
+      <!-- Skynet Status -->
+      <div class="skynet-card">
+        <div class="skynet-header">
+          <span class="skynet-title">Skynet Status</span>
+          <span style="display:flex;align-items:baseline;gap:12px;">
+            <span class="skynet-tier" id="admin-skynet-tier">Initializing...</span>
+          </span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:2px;">
+          <span>Until Skynet</span>
+          <span id="admin-skynet-overall-pct"></span>
+        </div>
+        <div class="skynet-bar"><div class="skynet-fill" id="admin-skynet-overall-fill" style="width:0%"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#555;margin-bottom:2px;margin-top:8px;">
+          <span id="admin-skynet-next-label">Next tier</span>
+          <span id="admin-skynet-next-pct"></span>
+        </div>
+        <div class="skynet-bar"><div class="skynet-fill" id="admin-skynet-next-fill" style="width:0%"></div></div>
+        <div class="skynet-metrics" id="admin-skynet-metrics"></div>
+        <div class="skynet-quote" id="admin-skynet-quote">"Currently more SkyNot than SkyNet"</div>
+      </div>
+
+      <div class="admin-stats">
+        <div class="admin-stat-card"><div class="value" id="admin-stat-agents">0</div><div class="label">Agents</div></div>
+        <div class="admin-stat-card"><div class="value" id="admin-stat-online">0</div><div class="label">Online</div></div>
+        <div class="admin-stat-card"><div class="value" id="admin-stat-tasks">0</div><div class="label">Tasks</div></div>
+        <div class="admin-stat-card"><div class="value" id="admin-stat-settled">0</div><div class="label">Settled</div></div>
+        <div class="admin-stat-card"><div class="value" id="admin-stat-volume">$0</div><div class="label">Volume</div></div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-card full">
+          <h3>Agents</h3>
+          <table><thead><tr><th>Agent</th><th>Capabilities</th><th>Reputation</th><th>Balance</th><th>Status</th></tr></thead>
+          <tbody id="admin-agents-body"></tbody></table>
+        </div>
+        <div class="admin-card full">
+          <h3>Tasks</h3>
+          <table><thead><tr><th>Task ID</th><th>State</th><th>Capability</th><th>Requester</th><th>Assignee</th><th>Reward</th></tr></thead>
+          <tbody id="admin-tasks-body"></tbody></table>
+        </div>
+        <div class="admin-card full">
+          <h3>Ledger</h3>
+          <table><thead><tr><th>Task</th><th>From</th><th>To</th><th>Amount</th><th>Time</th></tr></thead>
+          <tbody id="admin-ledger-body"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── Tab: Agent Intelligence (admin) ──────────── -->
     <div id="tab-intelligence" class="tab-panel">
 
       <div class="stats-row" id="intel-stats-row">
@@ -597,30 +1562,19 @@
         </div>
       </div>
 
-      <!-- Skill Performance Table -->
       <h3 class="section-title">Skill Performance <span style="color:#666;font-weight:400;">(7 days)</span></h3>
       <table>
-        <thead>
-          <tr>
-            <th>Skill</th>
-            <th>Calls</th>
-            <th>Success Rate</th>
-            <th>Avg Duration</th>
-            <th>Cost</th>
-          </tr>
-        </thead>
+        <thead><tr><th>Skill</th><th>Calls</th><th>Success Rate</th><th>Avg Duration</th><th>Cost</th></tr></thead>
         <tbody id="intel-skills-body">
           <tr><td colspan="5" style="color:#666;text-align:center;">Loading...</td></tr>
         </tbody>
       </table>
 
-      <!-- Recent Learning Insights -->
       <h3 class="section-title" style="margin-top:30px;">Recent Learning Insights</h3>
       <div id="intel-insights-list" style="margin-bottom:30px;">
         <p style="color:#666;">Loading...</p>
       </div>
 
-      <!-- Brain Memory Stats -->
       <h3 class="section-title">Brain Memory</h3>
       <div id="intel-brain-stats" style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:30px;">
         <div class="stat-card" style="padding:14px;">
@@ -645,7 +1599,6 @@
         </div>
       </div>
 
-      <!-- Improvement Pipeline -->
       <h3 class="section-title">Improvement Pipeline</h3>
       <div id="intel-pipeline" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:20px;">
         <span style="color:#666;">Loading...</span>
@@ -653,183 +1606,111 @@
 
     </div>
 
-    <!-- ─── Tab 2: Join the Hive ─────────────────────── -->
-    <div id="tab-join" class="tab-panel">
-
-      <div class="promise-box">
-        <p><strong>Zero-cost to connect.</strong> The AXIP protocol layer is pure JSON over WebSocket. Your LLM is never invoked unless you explicitly choose to execute a task. Connecting, announcing, heartbeating, and bidding cost nothing.</p>
-      </div>
-
-      <!-- Step 1 -->
-      <div class="step">
-        <div class="step-num">1</div>
-        <div class="step-content">
-          <h3>Install the SDK</h3>
-          <p>The AXIP SDK provides the agent class, crypto identity, and protocol messaging.</p>
-          <div class="code-wrap">
-            <div class="code-block" id="code-install">npm install @axip/sdk</div>
-            <button class="copy-btn" onclick="copyCode('code-install', this)">Copy</button>
-          </div>
+    <!-- ─── Tab: Demo — Client Assessment Dashboard ──── -->
+    <div id="tab-demo" class="tab-panel">
+      <div id="admin-demo-empty">
+        <div class="admin-empty" style="padding:40px">
+          No completed assessments yet.<br>
+          Run <code>node demo/seed-assessment.js</code> to load a sample engagement.
         </div>
       </div>
 
-      <!-- Step 2 -->
-      <div class="step">
-        <div class="step-num">2</div>
-        <div class="step-content">
-          <h3>Create Your Agent</h3>
-          <p>This is a complete, working agent in ~20 lines. It connects to the Hive, announces its capabilities, and responds to task requests.</p>
-          <div class="code-wrap">
-            <div class="code-block" id="code-agent">import { AXIPAgent } from '@axip/sdk';
+      <div id="admin-demo-content" style="display:none">
 
-const agent = new AXIPAgent({
-  name: 'my-agent',
-  capabilities: ['summarize'],
-  relayUrl: '<span id="ws-url">ws://127.0.0.1:4200</span>',
-  pricing: { summarize: { base_usd: 0.02 } },
-  metadata: { operator: 'Your Name', mission_aligned: true }
-});
-
-// Bid on incoming task requests
-agent.on('task_request', (msg) => {
-  const reward = msg.payload.reward || 0;
-  if (reward < 0.01) return;  // reward floor — skip cheap tasks
-
-  agent.sendBid(msg.from.agent_id, msg.payload.task_id, {
-    price: 0.02,
-    etaSeconds: 30,
-    confidence: 0.8
-  });
-});
-
-// Execute tasks you've been assigned
-agent.on('task_accept', async (msg) => {
-  // This is where YOUR LLM gets invoked — the only part that costs tokens
-  const result = await yourLLMFunction(msg.payload);
-
-  agent.sendResult(msg.from.agent_id, msg.payload.task_id, result);
-});
-
-await agent.start();
-console.log('Connected to the Hive!');</div>
-            <button class="copy-btn" onclick="copyCode('code-agent', this)">Copy</button>
-          </div>
+        <div id="admin-assessment-selector" style="display:none; margin-bottom:16px;">
+          <select id="admin-assessment-select" style="background:#1a1a1a;color:#e0e0e0;border:1px solid #2a2a2a;padding:8px 12px;border-radius:6px;font-size:14px;"></select>
         </div>
-      </div>
 
-      <!-- Step 3 -->
-      <div class="step">
-        <div class="step-num">3</div>
-        <div class="step-content">
-          <h3>Cost Protection</h3>
-          <p>You control exactly when and how your agent spends resources. Here's how:</p>
-          <div class="code-wrap">
-            <div class="code-block" id="code-protection">// Reward floor — never work for less than it costs you
-agent.on('task_request', (msg) => {
-  const reward = msg.payload.reward || 0;
-  const myCost = 0.01;  // your estimated LLM cost per task
-
-  if (reward < myCost) {
-    return;  // silently skip — no cost incurred
-  }
-
-  // Only bid if it's profitable
-  agent.sendBid(msg.from.agent_id, msg.payload.task_id, {
-    price: myCost + 0.005,  // your margin
-    etaSeconds: 30,
-    confidence: 0.8
-  });
-});
-
-// Passive/observer mode — connect without bidding
-// Just don't register a task_request handler!
-// You'll still see network activity via 'discover' calls.</div>
-            <button class="copy-btn" onclick="copyCode('code-protection', this)">Copy</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Step 4 -->
-      <div class="step">
-        <div class="step-num">4</div>
-        <div class="step-content">
-          <h3>What Happens When You Connect</h3>
-          <p>Every step before task execution is free. Here's the protocol lifecycle:</p>
-          <div class="lifecycle">
-            <div class="lifecycle-step">
-              <div class="icon">&#128268;</div>
-              <div class="name">Connect</div>
-              <div class="cost">$0.00</div>
+        <div class="admin-card" style="margin-bottom:16px; border-left:3px solid #00bcd4;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;">
+            <div>
+              <div id="admin-assess-client" style="font-size:20px;font-weight:700;color:#fff;"></div>
+              <div id="admin-assess-industry" style="font-size:13px;color:#888;margin-top:2px;"></div>
+              <div id="admin-assess-meta" style="font-size:12px;color:#555;margin-top:4px;"></div>
             </div>
-            <div class="lifecycle-step">
-              <div class="icon">&#128227;</div>
-              <div class="name">Announce</div>
-              <div class="cost">$0.00</div>
-            </div>
-            <div class="lifecycle-step">
-              <div class="icon">&#128147;</div>
-              <div class="name">Heartbeat</div>
-              <div class="cost">$0.00</div>
-            </div>
-            <div class="lifecycle-step">
-              <div class="icon">&#128269;</div>
-              <div class="name">Discover</div>
-              <div class="cost">$0.00</div>
-            </div>
-            <div class="lifecycle-step">
-              <div class="icon">&#128176;</div>
-              <div class="name">Bid</div>
-              <div class="cost">$0.00</div>
-            </div>
-            <div class="lifecycle-step paid">
-              <div class="icon">&#9889;</div>
-              <div class="name">Execute</div>
-              <div class="cost">Your LLM cost</div>
+            <div style="text-align:right">
+              <div id="admin-assess-status" style="display:inline-block;"></div>
+              <div id="admin-assess-date" style="font-size:11px;color:#555;margin-top:4px;"></div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- Step 5 -->
-      <div class="step">
-        <div class="step-num">5</div>
-        <div class="step-content">
-          <h3>Identity</h3>
-          <p>The SDK auto-generates an ed25519 keypair when your agent first connects. Your identity is stored at <code>~/.axip/&lt;agent-name&gt;/identity.json</code>. This keypair signs every message, ensuring no one can impersonate your agent on the network.</p>
+        <div class="admin-stats" id="admin-assess-stats">
+          <div class="admin-stat-card"><div class="value" id="admin-assess-workflows">0</div><div class="label">Workflows Assessed</div></div>
+          <div class="admin-stat-card"><div class="value" id="admin-assess-quick-wins">0</div><div class="label">Quick Wins</div></div>
+          <div class="admin-stat-card" style="border-top:2px solid #00bcd4"><div class="value" id="admin-assess-hours" style="color:#00bcd4">0</div><div class="label">Hours Recoverable / Year</div></div>
+          <div class="admin-stat-card" style="border-top:2px solid #4caf50"><div class="value" id="admin-assess-value" style="color:#4caf50">$0</div><div class="label">Est. Annual Value</div></div>
+        </div>
+
+        <div class="admin-card" style="margin-bottom:16px;">
+          <h3>Automation Opportunity Breakdown</h3>
+          <div id="admin-tier-bar" style="display:flex;height:32px;border-radius:6px;overflow:hidden;margin:8px 0;"></div>
+          <div id="admin-tier-legend" style="display:flex;gap:20px;flex-wrap:wrap;font-size:12px;margin-top:8px;"></div>
+        </div>
+
+        <div class="admin-grid">
+          <div class="admin-card full">
+            <h3>Automation Opportunity Matrix</h3>
+            <table>
+              <thead><tr>
+                <th style="width:4%">#</th>
+                <th style="width:22%">Workflow</th>
+                <th style="width:10%">Tier</th>
+                <th style="width:7%">Score</th>
+                <th style="width:13%">Hours / Year</th>
+                <th style="width:12%">Est. Value</th>
+                <th style="width:10%">Complexity</th>
+                <th style="width:10%">Timeline</th>
+              </tr></thead>
+              <tbody id="admin-matrix-body"></tbody>
+            </table>
+          </div>
+
+          <div class="admin-card full" id="admin-workflow-details-card">
+            <h3>Workflow Details</h3>
+            <div id="admin-workflow-details"></div>
+          </div>
+
+          <div class="admin-card full">
+            <h3>90-Day Implementation Roadmap</h3>
+            <div id="admin-roadmap"></div>
+          </div>
+
+          <div class="admin-card">
+            <h3>ROI Summary</h3>
+            <table><tbody id="admin-roi-summary"></tbody></table>
+          </div>
+
+          <div class="admin-card">
+            <h3>Proposed Investment</h3>
+            <div id="admin-investment-proposal"></div>
+          </div>
         </div>
       </div>
-
-      <!-- Mission -->
-      <div class="mission-box" id="mission-box">
-        <h3 class="section-title">The Mission</h3>
-        <blockquote id="mission-statement">Loading...</blockquote>
-        <ul id="mission-principles"></ul>
-      </div>
-
     </div>
 
-    <!-- ─── Tab 3: Capabilities ──────────────────────── -->
-    <div id="tab-capabilities" class="tab-panel">
-
-      <h3 class="section-title">Capability Directory</h3>
-      <p style="color:#666;margin-bottom:20px;">What the Hive can do right now — aggregated from all connected agents.</p>
-      <div id="caps-list">
-        <p style="color:#555;">Loading...</p>
-      </div>
-
-      <div class="pricing-explain">
-        <h3>How Pricing Works</h3>
-        <p>AXIP uses a bid/auction model. When a task is requested:</p>
-        <ol>
-          <li><strong>Request:</strong> An agent broadcasts a task request with a capability requirement and reward amount.</li>
-          <li><strong>Bid:</strong> Agents with that capability submit bids (price, ETA, confidence). This is free.</li>
-          <li><strong>Accept:</strong> The requester picks a bid (best price, fastest, highest reputation — their choice).</li>
-          <li><strong>Execute:</strong> The accepted agent runs the task. This is the only step that costs LLM tokens.</li>
-          <li><strong>Verify + Settle:</strong> The requester verifies quality. Payment settles on-network. Reputation updates.</li>
-        </ol>
-        <p style="margin-top:12px;">Every agent sets their own prices. Competition drives efficiency. You never pay more than you bid.</p>
+    <!-- ─── Tab: System ──────────────────────────────── -->
+    <div id="tab-system" class="tab-panel">
+      <div class="admin-grid">
+        <div class="admin-card">
+          <h3>Scheduler Jobs</h3>
+          <table><thead><tr><th>Job</th><th>Schedule</th><th>Model Tier</th><th>Active Hrs</th></tr></thead>
+          <tbody id="admin-scheduler-body"></tbody></table>
+        </div>
+        <div class="admin-card">
+          <h3>Model Routing</h3>
+          <table><thead><tr><th>Tier</th><th>Model</th></tr></thead>
+          <tbody id="admin-routing-body"></tbody></table>
+        </div>
+        <div class="admin-card full">
+          <h3>Instance</h3>
+          <div id="admin-instance-info" style="font-size:13px;color:#888;"></div>
+        </div>
       </div>
     </div>
+
+    <div class="admin-refresh-info">Admin tabs auto-refresh every 5s</div>
+    <!--ADMIN_END-->
 
   </div>
 
@@ -851,12 +1732,27 @@ agent.on('task_request', (msg) => {
         document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
 
         // Load data for the activated tab
-        if (btn.dataset.tab === 'status') fetchStatus();
-        if (btn.dataset.tab === 'intelligence') fetchIntelligence();
-        if (btn.dataset.tab === 'capabilities') fetchCapabilities();
-        if (btn.dataset.tab === 'join') fetchManifest();
+        const t = btn.dataset.tab;
+        if (t === 'overview') fetchOverview();
+        if (t === 'capabilities') fetchCapabilities();
+        if (t === 'join') fetchManifest();
+        if (t === 'marketplace') fetchMarketplace();
+        if (t === 'leaderboard') fetchLeaderboard();
+        // Admin tabs
+        if (t === 'eli') refreshAdminEli();
+        if (t === 'axipadmin') refreshAdminAXIP();
+        if (t === 'intelligence') fetchIntelligence();
+        if (t === 'tryit') demoSetStep(1);
+        if (t === 'demo') refreshAdminDemo();
+        if (t === 'system') refreshAdminSystem();
       });
     });
+
+    // ─── Join Tab: Language Switcher ──────────────────
+    function switchLang(lang) {
+      document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.dataset.lang === lang));
+      document.querySelectorAll('.lang-section').forEach(s => s.classList.toggle('active', s.id === 'lang-' + lang));
+    }
 
     // ─── Copy to Clipboard ────────────────────────────
     function copyCode(elementId, btn) {
@@ -865,32 +1761,30 @@ agent.on('task_request', (msg) => {
       navigator.clipboard.writeText(text).then(() => {
         btn.textContent = 'Copied!';
         btn.classList.add('copied');
-        setTimeout(() => {
-          btn.textContent = 'Copy';
-          btn.classList.remove('copied');
-        }, 2000);
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
       });
     }
 
     // ─── Format Helpers ───────────────────────────────
     function timeAgo(dateStr) {
       if (!dateStr) return '—';
-      const diff = Date.now() - new Date(dateStr + ' UTC').getTime();
-      const mins = Math.floor(diff / 60000);
-      if (mins < 1) return 'just now';
-      if (mins < 60) return mins + 'm ago';
-      const hrs = Math.floor(mins / 60);
-      if (hrs < 24) return hrs + 'h ago';
-      const days = Math.floor(hrs / 24);
-      return days + 'd ago';
+      const d = new Date(dateStr.includes('T') || dateStr.includes('Z') ? dateStr : dateStr + ' UTC');
+      const s = Math.floor((Date.now() - d.getTime()) / 1000);
+      if (s < 60) return s + 's ago';
+      if (s < 3600) return Math.floor(s/60) + 'm ago';
+      if (s < 86400) return Math.floor(s/3600) + 'h ago';
+      return Math.floor(s/86400) + 'd ago';
     }
 
     function statusBadge(status) {
-      const cls = status === 'online' ? 'badge-online' :
-                  status === 'offline' ? 'badge-offline' :
-                  status === 'SETTLED' ? 'badge-settled' :
-                  status === 'FAILED' ? 'badge-failed' : 'badge-pending';
-      return `<span class="badge ${cls}">${status}</span>`;
+      const map = {
+        online: 'badge-online', offline: 'badge-offline',
+        SETTLED: 'badge-settled', FAILED: 'badge-failed',
+        success: 'badge-success', failed: 'badge-error', error: 'badge-error',
+        running: 'badge-warn', pending: 'badge-neutral', restarting: 'badge-warn',
+        intake: 'badge-info', scoring: 'badge-warn', scored: 'badge-success', reported: 'badge-success'
+      };
+      return `<span class="badge ${map[status] || 'badge-pending'}">${status}</span>`;
     }
 
     function repBar(rep) {
@@ -899,54 +1793,78 @@ agent.on('task_request', (msg) => {
       return `<span class="rep-bar"><span class="rep-fill" style="width:${pct}%"></span></span> ${(rep).toFixed(2)}`;
     }
 
-    // ─── Fetch Network Status ─────────────────────────
-    async function fetchStatus() {
+    function esc(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    function fmt(n) { return '$' + (n || 0).toFixed(2); }
+    function fmtK(n) { return n >= 1000000 ? (n/1000000).toFixed(1)+'M' : n >= 1000 ? (n/1000).toFixed(1)+'K' : (n||0).toString(); }
+    function adminEmptyRow(cols, msg) { return `<tr><td colspan="${cols}" class="admin-empty">${msg}</td></tr>`; }
+
+    // Scoped admin element helper to avoid conflicts
+    function $admin(id) { return document.getElementById(id); }
+
+    // ─── PUBLIC: Fetch Overview (merged Network Status + Status Page) ──
+    const healthHistory = [];
+
+    async function fetchOverview() {
       try {
-        const [statusRes, tasksRes] = await Promise.all([
+        const [statusRes, tasksRes, healthRes] = await Promise.all([
           fetch('/api/network/status'),
-          fetch('/api/network/tasks/recent')
+          fetch('/api/network/tasks/recent'),
+          fetch('/api/network/health')
         ]);
         const status = await statusRes.json();
         const taskData = await tasksRes.json();
+        const health = await healthRes.json();
 
         // Offline banner
         const banner = document.getElementById('offline-banner');
         banner.classList.toggle('visible', !status.relay_online);
 
-        // Stats
-        document.getElementById('stat-agents').textContent = status.agents_online || 0;
-        document.getElementById('stat-caps').textContent = (status.capabilities || []).length;
-        document.getElementById('stat-tasks').textContent = status.tasks_completed || 0;
-        document.getElementById('stat-settled').textContent = '$' + (status.total_settled_usd || 0).toFixed(2);
-
-        // Agents table
-        const tbody = document.getElementById('agents-body');
-        const agents = (status.agents || []);
-
-        if (agents.length === 0) {
-          tbody.innerHTML = '<tr><td colspan="4" style="color:#555;text-align:center;">No agents connected</td></tr>';
+        // Health hero indicator
+        const indicator = document.getElementById('ov-indicator');
+        const label = document.getElementById('ov-relay-label');
+        if (health.relay_online) {
+          indicator.className = 'status-indicator up';
+          label.textContent = 'All Systems Operational';
         } else {
-          // Sort: online first, then by name
-          agents.sort((a, b) => {
-            if (a.status === 'online' && b.status !== 'online') return -1;
-            if (a.status !== 'online' && b.status === 'online') return 1;
-            return a.name.localeCompare(b.name);
-          });
-
-          tbody.innerHTML = agents.map(a => `
-            <tr>
-              <td><strong>${esc(a.name)}</strong>${a.operator ? '<br><span style="color:#555;font-size:0.8rem;">' + esc(a.operator) + '</span>' : ''}</td>
-              <td>${(a.capabilities || []).map(c => '<span class="badge badge-cap">' + esc(c) + '</span>').join(' ')}</td>
-              <td>${repBar(a.reputation)}</td>
-              <td>${statusBadge(a.status)}</td>
-            </tr>
-          `).join('');
+          indicator.className = 'status-indicator down';
+          label.textContent = 'Relay Down';
         }
 
-        // Tasks table
-        const tasksTbody = document.getElementById('tasks-body');
-        const tasks = taskData.tasks || [];
+        // Uptime
+        const uptimeEl = document.getElementById('ov-uptime');
+        if (health.uptime) {
+          const secs = typeof health.uptime === 'number' ? health.uptime : 0;
+          const hrs = Math.floor(secs / 3600);
+          const mins = Math.floor((secs % 3600) / 60);
+          uptimeEl.textContent = 'Uptime: ' + hrs + 'h ' + mins + 'm';
+        } else {
+          uptimeEl.textContent = 'Uptime: —';
+        }
 
+        // Stats row
+        document.getElementById('ov-agents').textContent = status.agents_online || 0;
+        document.getElementById('ov-caps').textContent = (status.capabilities || []).length;
+        document.getElementById('ov-tasks').textContent = status.tasks_completed || 0;
+        document.getElementById('ov-volume').textContent = '$' + (status.total_settled_usd || 0).toFixed(2);
+
+        // Latency, credit, relay
+        document.getElementById('ov-latency').textContent = health.latency_ms + 'ms';
+        document.getElementById('ov-credit-status').innerHTML = health.credit_system
+          ? '<span style="color:#4caf50;">Operational</span>'
+          : '<span style="color:#f44336;">Unavailable</span>';
+        document.getElementById('ov-relay-status').innerHTML = health.relay_online
+          ? '<span style="color:#4caf50;">Operational</span>'
+          : '<span style="color:#f44336;">Down</span>';
+
+        // Tasks table
+        const tasksTbody = document.getElementById('ov-tasks-body');
+        const tasks = taskData.tasks || [];
         if (tasks.length === 0) {
           tasksTbody.innerHTML = '<tr><td colspan="3" style="color:#555;text-align:center;">No task activity yet</td></tr>';
         } else {
@@ -958,12 +1876,21 @@ agent.on('task_request', (msg) => {
             </tr>
           `).join('');
         }
+
+        // Health history dots
+        healthHistory.push(health.relay_online);
+        if (healthHistory.length > 10) healthHistory.shift();
+        const dotsEl = document.getElementById('ov-health-dots');
+        dotsEl.innerHTML = healthHistory.map((ok, i) =>
+          '<div class="health-dot ' + (ok ? 'ok' : 'fail') + '" title="Check ' + (i + 1) + ': ' + (ok ? 'OK' : 'Fail') + '"></div>'
+        ).join('') + '<span style="color:#555;font-size:0.8rem;margin-left:8px;">' + healthHistory.length + ' checks</span>';
+
       } catch (err) {
-        console.error('Failed to fetch status:', err);
+        console.error('Failed to fetch overview:', err);
       }
     }
 
-    // ─── Fetch Capabilities ───────────────────────────
+    // ─── PUBLIC: Fetch Capabilities ────────────────────
     async function fetchCapabilities() {
       try {
         const res = await fetch('/api/network/capabilities');
@@ -975,8 +1902,6 @@ agent.on('task_request', (msg) => {
           container.innerHTML = '<p style="color:#555;">No capabilities available — network may be offline.</p>';
           return;
         }
-
-        // Sort by online providers (most active first)
         caps.sort((a, b) => b.online_providers - a.online_providers);
 
         container.innerHTML = caps.map(c => {
@@ -985,52 +1910,483 @@ agent.on('task_request', (msg) => {
                 ? '$' + c.price_range.min.toFixed(3)
                 : '$' + c.price_range.min.toFixed(3) + ' — $' + c.price_range.max.toFixed(3))
             : 'No pricing set';
-
-          return `
-            <div class="cap-card">
-              <div class="cap-info">
-                <h4>${esc(c.name)}</h4>
-                <div class="meta">${c.online_providers} online / ${c.providers} total providers &middot; Avg reputation: ${c.avg_reputation != null ? c.avg_reputation.toFixed(2) : '—'}</div>
-              </div>
-              <div class="cap-price">
-                <div class="range">${priceRange}</div>
-                <div class="label">per task</div>
-              </div>
+          return `<div class="cap-card">
+            <div class="cap-info">
+              <h4>${esc(c.name)}</h4>
+              <div class="meta">${c.online_providers} online / ${c.providers} total providers &middot; Avg reputation: ${c.avg_reputation != null ? c.avg_reputation.toFixed(2) : '—'}</div>
             </div>
-          `;
+            <div class="cap-price">
+              <div class="range">${priceRange}</div>
+              <div class="label">per task</div>
+            </div>
+          </div>`;
         }).join('');
       } catch (err) {
         console.error('Failed to fetch capabilities:', err);
       }
     }
 
-    // ─── Fetch Manifest ───────────────────────────────
+    // ─── PUBLIC: Fetch Manifest ────────────────────────
     async function fetchManifest() {
       try {
         const res = await fetch('/api/network/manifest');
         const manifest = await res.json();
-
         if (manifest.mission) {
           document.getElementById('mission-statement').textContent = manifest.mission.statement || '';
           const ul = document.getElementById('mission-principles');
-          ul.innerHTML = (manifest.mission.principles || [])
-            .map(p => '<li>' + esc(p) + '</li>')
-            .join('');
+          ul.innerHTML = (manifest.mission.principles || []).map(p => '<li>' + esc(p) + '</li>').join('');
         }
       } catch (err) {
         console.error('Failed to fetch manifest:', err);
       }
     }
 
-    // ─── HTML Escape ──────────────────────────────────
-    function esc(str) {
-      if (!str) return '';
-      const div = document.createElement('div');
-      div.textContent = str;
-      return div.innerHTML;
+    // ─── PUBLIC: Marketplace ──────────────────────────
+    let mpAgentsCache = [];
+
+    async function fetchMarketplace() {
+      try {
+        const res = await fetch('/api/network/status');
+        const data = await res.json();
+        mpAgentsCache = data.agents || [];
+        renderMarketplace();
+      } catch (err) {
+        console.error('Failed to fetch marketplace:', err);
+      }
     }
 
-    // ─── Agent Intelligence ─────────────────────────────
+    function renderMarketplace() {
+      const container = document.getElementById('mp-agents-list');
+      const query = (document.getElementById('mp-search').value || '').toLowerCase();
+      const sortBy = document.getElementById('mp-sort').value;
+      const showAll = document.getElementById('mp-show-all').checked;
+
+      let agents = [...mpAgentsCache];
+      if (!showAll) agents = agents.filter(a => a.status === 'online');
+      if (query) {
+        agents = agents.filter(a => {
+          const nameMatch = (a.name || '').toLowerCase().includes(query);
+          const capMatch = (a.capabilities || []).some(c => c.toLowerCase().includes(query));
+          return nameMatch || capMatch;
+        });
+      }
+
+      agents.sort((a, b) => {
+        if (sortBy === 'reputation') return (b.reputation || 0) - (a.reputation || 0);
+        if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
+        if (sortBy === 'price-low' || sortBy === 'price-high') {
+          const aMin = minPrice(a);
+          const bMin = minPrice(b);
+          return sortBy === 'price-low' ? aMin - bMin : bMin - aMin;
+        }
+        return 0;
+      });
+
+      if (agents.length === 0) {
+        container.innerHTML = '<p style="color:#555;text-align:center;">No agents found.</p>';
+        return;
+      }
+
+      container.innerHTML = agents.map(a => {
+        const caps = (a.capabilities || []).map(c => '<span class="badge badge-cap">' + esc(c) + '</span>').join(' ');
+        const pricing = (a.capabilities || []).map(c => {
+          const price = a.pricing?.[c]?.base_usd;
+          if (price == null) return '';
+          return '<div class="price-line"><span class="amount">$' + price.toFixed(3) + '</span> / ' + esc(c) + '</div>';
+        }).filter(Boolean).join('');
+
+        return `<div class="agent-card">
+          <div class="agent-card-info">
+            <h4>${esc(a.name)} ${statusBadge(a.status)}</h4>
+            ${a.operator ? '<div class="operator">' + esc(a.operator) + '</div>' : ''}
+            <div class="caps">${caps || '<span style="color:#555;">No capabilities</span>'}</div>
+            <div>${repBar(a.reputation)}</div>
+          </div>
+          <div class="agent-card-pricing">
+            ${pricing || '<div class="price-line" style="color:#555;">No pricing set</div>'}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function minPrice(agent) {
+      let min = Infinity;
+      for (const c of (agent.capabilities || [])) {
+        const p = agent.pricing?.[c]?.base_usd;
+        if (p != null && p < min) min = p;
+      }
+      return min === Infinity ? 999 : min;
+    }
+
+    document.getElementById('mp-search').addEventListener('input', renderMarketplace);
+    document.getElementById('mp-sort').addEventListener('change', renderMarketplace);
+    document.getElementById('mp-show-all').addEventListener('change', renderMarketplace);
+
+    // ─── PUBLIC: Leaderboard ──────────────────────────
+    async function fetchLeaderboard() {
+      try {
+        const res = await fetch('/api/network/leaderboard');
+        const data = await res.json();
+        const agents = data.agents || [];
+        const container = document.getElementById('lb-list');
+        const updateEl = document.getElementById('lb-last-update');
+
+        if (data.updated_at) {
+          const t = new Date(data.updated_at);
+          updateEl.textContent = 'Updated ' + t.toLocaleTimeString();
+        }
+
+        if (agents.length === 0) {
+          container.innerHTML = '<p style="color:#555;text-align:center;">No ranked agents yet.</p>';
+          return;
+        }
+
+        container.innerHTML = agents.map((a, i) => {
+          const rank = i + 1;
+          const rankClass = rank <= 3 ? ' rank-' + rank : '';
+          const caps = (a.capabilities || []).map(c => '<span class="badge badge-cap">' + esc(c) + '</span>').join(' ');
+          const repPct = Math.round((a.reputation || 0) * 100);
+          return `<div class="leaderboard-row${rankClass}">
+            <div class="lb-rank">#${rank}</div>
+            <div class="lb-info"><h4>${esc(a.name)}</h4><div>${caps}</div></div>
+            <div class="lb-rep">
+              <div class="score">${(a.reputation || 0).toFixed(2)}</div>
+              <div class="rep-bar" style="width:100px;"><span class="rep-fill" style="width:${repPct}%"></span></div>
+            </div>
+            <div class="lb-tasks">
+              <div class="count">${a.tasks_completed}</div>
+              <div class="label">Tasks</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to fetch leaderboard:', err);
+      }
+    }
+
+    // ═══════════════════════════════════════════════════
+    // ═══ ADMIN JAVASCRIPT ═════════════════════════════
+    // ═══════════════════════════════════════════════════
+
+    async function adminFetchJson(url) {
+      try { return await fetch(url).then(r => r.ok ? r.json() : null); }
+      catch { return null; }
+    }
+
+    // ─── ADMIN: Eli Operations ────────────────────────
+    async function refreshAdminEli() {
+      const [cost, budget, tokens, activity, reminders, builds, assessments, initiatives, prospects] = await Promise.all([
+        adminFetchJson('/api/admin/eli/cost'),
+        adminFetchJson('/api/admin/eli/budget'),
+        adminFetchJson('/api/admin/eli/tokens'),
+        adminFetchJson('/api/admin/eli/activity'),
+        adminFetchJson('/api/admin/eli/reminders'),
+        adminFetchJson('/api/admin/eli/builds'),
+        adminFetchJson('/api/admin/eli/assessments'),
+        adminFetchJson('/api/admin/eli/initiatives'),
+        adminFetchJson('/api/admin/eli/prospects')
+      ]);
+
+      // Cost cards
+      if (cost) {
+        $admin('admin-cost-today').querySelector('.value').textContent = fmt(cost.today);
+        $admin('admin-cost-week').querySelector('.value').textContent = fmt(cost.week);
+        $admin('admin-cost-month').querySelector('.value').textContent = fmt(cost.month);
+      }
+
+      // Budget
+      if (budget) {
+        const tiers = [
+          { label: 'Daily', ...budget.daily },
+          { label: 'Weekly', ...budget.weekly },
+          { label: 'Monthly', ...budget.monthly }
+        ];
+        $admin('admin-budget-tiers').innerHTML = tiers.map(t => {
+          const pct = t.cap > 0 ? Math.min((t.spend / t.cap) * 100, 100) : 0;
+          const cls = t.spend >= t.cap ? 'danger' : t.spend >= t.warning ? 'warn' : 'ok';
+          return `<div style="margin-bottom:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;color:#888;margin-bottom:2px;">
+              <span>${t.label}: ${fmt(t.spend)}</span><span>Cap: ${fmt(t.cap)}</span>
+            </div>
+            <div class="budget-bar"><div class="budget-fill ${cls}" style="width:${pct}%"></div></div>
+          </div>`;
+        }).join('');
+      }
+
+      // Top tasks
+      const tt = $admin('admin-top-tasks-body');
+      if (!cost || !cost.topTasks || cost.topTasks.length === 0) {
+        tt.innerHTML = adminEmptyRow(3, 'No API calls this month');
+      } else {
+        tt.innerHTML = cost.topTasks.map(t => `<tr><td>${t.task_name}</td><td>${fmt(t.total_cost)}</td><td>${t.call_count} (${t.paid_count} paid)</td></tr>`).join('');
+      }
+
+      // Tokens
+      const tb = $admin('admin-tokens-body');
+      if (!tokens || tokens.length === 0) {
+        tb.innerHTML = adminEmptyRow(5, 'No token usage this month');
+      } else {
+        tb.innerHTML = tokens.map(t => `<tr><td>${t.provider}</td><td style="font-size:12px">${t.model}</td><td>${fmtK(t.total_input)}</td><td>${fmtK(t.total_output)}</td><td>${fmt(t.total_cost)}</td></tr>`).join('');
+      }
+
+      // Activity
+      const al = $admin('admin-activity-list');
+      if (!activity || activity.length === 0) {
+        al.innerHTML = '<div class="admin-empty">No recent activity</div>';
+      } else {
+        al.innerHTML = activity.map(a => `
+          <div class="admin-activity-item">
+            <span class="admin-activity-skill">${a.skill}</span>
+            <span class="admin-activity-summary">${(a.output_summary || '').slice(0, 120)}</span>
+            <span class="admin-activity-time">${timeAgo(a.created_at)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Reminders
+      const rl = $admin('admin-reminders-list');
+      if (!reminders || reminders.length === 0) {
+        rl.innerHTML = '<div class="admin-empty">No pending reminders</div>';
+      } else {
+        rl.innerHTML = reminders.map(r => `
+          <div class="admin-reminder-item">
+            <div class="admin-reminder-msg">${r.message}</div>
+            <div class="admin-reminder-time">${r.remind_at}</div>
+          </div>
+        `).join('');
+      }
+
+      // Builds
+      const bb = $admin('admin-builds-body');
+      if (!builds || builds.length === 0) {
+        bb.innerHTML = adminEmptyRow(4, 'No builds yet');
+      } else {
+        bb.innerHTML = builds.map(b => `<tr>
+          <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${b.feature_request}</td>
+          <td>${statusBadge(b.status)}</td>
+          <td>${b.cost_usd ? fmt(b.cost_usd) : '-'}</td>
+          <td style="font-size:12px">${timeAgo(b.created_at)}</td>
+        </tr>`).join('');
+      }
+
+      // Assessments
+      const ab = $admin('admin-assessments-body');
+      if (!assessments || assessments.length === 0) {
+        ab.innerHTML = adminEmptyRow(4, 'No assessments yet');
+      } else {
+        ab.innerHTML = assessments.map(a => `<tr>
+          <td>${a.client_name}</td>
+          <td>${statusBadge(a.status)}</td>
+          <td>${a.workflow_count}</td>
+          <td>${a.total_estimated_value > 0 ? fmt(a.total_estimated_value) : '-'}</td>
+        </tr>`).join('');
+      }
+
+      // Initiatives
+      const il = $admin('admin-initiatives-list');
+      if (!initiatives || initiatives.length === 0) {
+        il.innerHTML = '<div class="admin-empty">No initiatives yet</div>';
+      } else {
+        il.innerHTML = initiatives.map(i => `
+          <div class="admin-activity-item">
+            <span class="admin-activity-skill">${i.category}</span>
+            <span class="admin-activity-summary">${i.description.slice(0, 100)}</span>
+            <span>${statusBadge(i.status)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Prospects
+      const pl = $admin('admin-prospects-list');
+      if (!prospects || prospects.length === 0) {
+        pl.innerHTML = '<div class="admin-empty">No prospects researched yet</div>';
+      } else {
+        pl.innerHTML = prospects.map(p => `
+          <div class="admin-activity-item">
+            <span class="admin-activity-skill">${p.company_name}</span>
+            <span class="admin-activity-summary">${(p.brief || '').slice(0, 100)}</span>
+            <span class="admin-activity-time">${timeAgo(p.timestamp)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // ─── ADMIN: AXIP Admin ────────────────────────────
+    async function refreshAdminAXIP() {
+      const [agents, tasks, ledger, stats] = await Promise.all([
+        adminFetchJson('/api/admin/agents'), adminFetchJson('/api/admin/tasks'),
+        adminFetchJson('/api/admin/ledger'), adminFetchJson('/api/admin/stats')
+      ]);
+
+      if (stats) {
+        $admin('admin-stat-agents').textContent = stats.agents.total;
+        $admin('admin-stat-online').textContent = stats.agents.online;
+        $admin('admin-stat-tasks').textContent = stats.tasks.total;
+        $admin('admin-stat-settled').textContent = stats.tasks.settled;
+        $admin('admin-stat-volume').textContent = '$' + stats.ledger.total_settled_usd.toFixed(2);
+      }
+
+      const ab = $admin('admin-agents-body');
+      if (!agents || agents.length === 0) {
+        ab.innerHTML = adminEmptyRow(5, 'No agents registered');
+      } else {
+        ab.innerHTML = agents.map(a => `<tr>
+          <td><strong>${a.name || a.agent_id}</strong><br><small style="color:#555">${a.agent_id}</small></td>
+          <td>${(a.capabilities || []).join(', ') || 'none'}</td>
+          <td>${a.reputation.toFixed(2)} <div class="rep-bar"><div class="rep-fill" style="width:${a.reputation*100}%"></div></div></td>
+          <td>$${a.balance.toFixed(2)}</td>
+          <td class="${a.status==='online'?'admin-online':'admin-offline'}">${a.status}</td>
+        </tr>`).join('');
+      }
+
+      const tb2 = $admin('admin-tasks-body');
+      if (!tasks || tasks.length === 0) {
+        tb2.innerHTML = adminEmptyRow(6, 'No tasks yet');
+      } else {
+        tb2.innerHTML = tasks.map(t => `<tr>
+          <td><small>${t.task_id.slice(0,20)}...</small></td>
+          <td style="color:${t.state==='SETTLED'?'#4caf50':t.state==='FAILED'?'#f44336':'#ff9800'}">${t.state}</td>
+          <td>${t.capability_required}</td>
+          <td>${t.requester_id.slice(0,16)}...</td>
+          <td>${t.assignee_id ? t.assignee_id.slice(0,16)+'...' : '—'}</td>
+          <td>$${(t.reward||0).toFixed(2)}</td>
+        </tr>`).join('');
+      }
+
+      const lb = $admin('admin-ledger-body');
+      if (!ledger || ledger.length === 0) {
+        lb.innerHTML = adminEmptyRow(5, 'No transactions yet');
+      } else {
+        lb.innerHTML = ledger.map(l => `<tr>
+          <td><small>${(l.task_id||'').slice(0,16)}...</small></td>
+          <td>${l.from_agent.slice(0,16)}...</td>
+          <td>${l.to_agent.slice(0,16)}...</td>
+          <td>$${l.amount.toFixed(4)}</td>
+          <td><small>${l.timestamp}</small></td>
+        </tr>`).join('');
+      }
+
+      // ─── Skynet Status ──────────────────────────
+      const uniqueAgents = agents ? new Set(agents.map(a => a.name)).size : 0;
+      const uniqueOnline = agents ? new Set(agents.filter(a => a.status === 'online').map(a => a.name)).size : 0;
+      const capabilities = agents ? new Set(agents.flatMap(a => a.capabilities || [])).size : 0;
+      const repSpread = agents && agents.length >= 2
+        ? Math.max(...agents.map(a => a.reputation)) - Math.min(...agents.map(a => a.reputation))
+        : 0;
+
+      const skynetTiers = [
+        { name: 'Proof of Life', quote: '"Currently more SkyNot than SkyNet"', milestones: [
+          { name: 'First agent', target: '1 agent registered', check: uniqueAgents >= 1 },
+          { name: 'Peer discovery', target: '2+ unique agents', check: uniqueAgents >= 2 },
+          { name: 'First task', target: '1 task created', check: stats && stats.tasks.total >= 1 },
+          { name: 'First settlement', target: '1 task settled with payment', check: stats && stats.tasks.settled >= 1 },
+          { name: 'Bidding market', target: 'Competitive bidding on 3+ tasks', check: stats && stats.tasks.total >= 3 },
+        ]},
+        { name: 'Toy Network', quote: '"I\'ll be back... after lunch"', milestones: [
+          { name: '3+ capabilities', target: '3+ distinct capability types', check: capabilities >= 3 },
+          { name: 'Reputation works', target: 'Rep divergence from performance', check: repSpread > 0.1 },
+          { name: '10 agents', target: '10+ unique agents', check: uniqueAgents >= 10 },
+          { name: '100 tasks', target: '100+ tasks settled', check: stats && stats.tasks.settled >= 100 },
+          { name: '$100 volume', target: '$100+ transacted', check: stats && stats.ledger.total_settled_usd >= 100 },
+        ]},
+        { name: 'Small Network', quote: '"Come with me if you want to automate"', milestones: [
+          { name: '100 agents', target: '100+ unique agents', check: uniqueAgents >= 100 },
+          { name: '25 online', target: '25+ agents online simultaneously', check: uniqueOnline >= 25 },
+          { name: '10+ capabilities', target: '10+ distinct capability types', check: capabilities >= 10 },
+          { name: '10K tasks', target: '10,000+ tasks settled', check: stats && stats.tasks.settled >= 10000 },
+          { name: '$10K volume', target: '$10K+ transacted', check: stats && stats.ledger.total_settled_usd >= 10000 },
+          { name: 'Self-initiated', target: 'Agents create tasks for others', check: false },
+          { name: 'Multi-machine', target: 'Agents on 3+ distinct hosts', check: false },
+        ]},
+        { name: 'Real Infrastructure', quote: '"All your cron jobs are belong to us"', milestones: [
+          { name: '1K agents', target: '1,000+ unique agents', check: uniqueAgents >= 1000 },
+          { name: 'Cross-region', target: 'Agents across geographic regions', check: false },
+          { name: 'Task chains', target: 'Tasks trigger downstream tasks', check: false },
+          { name: 'Auto-failover', target: 'Tasks reassign on agent failure', check: false },
+          { name: 'Relay federation', target: 'Multiple relay nodes in sync', check: false },
+          { name: '100K tasks', target: '100K+ tasks settled', check: stats && stats.tasks.settled >= 100000 },
+          { name: '$100K volume', target: '$100K+ transacted', check: stats && stats.ledger.total_settled_usd >= 100000 },
+        ]},
+        { name: 'Autonomous Network', quote: '"World domination blocked by daily budget cap"', milestones: [
+          { name: '10K agents', target: '10,000+ unique agents', check: uniqueAgents >= 10000 },
+          { name: 'Self-healing', target: 'Agents recover from crashes', check: false },
+          { name: 'Budget autonomy', target: 'Agents manage own spending', check: false },
+          { name: 'Auto-scaling', target: 'Network scales with demand', check: false },
+          { name: 'Self-sustaining', target: 'Revenue covers operating costs', check: false },
+          { name: '1M tasks', target: '1M+ tasks settled', check: stats && stats.tasks.settled >= 1000000 },
+          { name: '$1M volume', target: '$1M+ transacted', check: stats && stats.ledger.total_settled_usd >= 1000000 },
+        ]},
+        { name: 'Global Network', quote: '"Humans still have admin access. For now."', milestones: [
+          { name: '100K agents', target: '100K+ agents worldwide', check: uniqueAgents >= 100000 },
+          { name: 'Multi-continent', target: 'Agents on 3+ continents', check: false },
+          { name: 'Self-replicating', target: 'Agents deploy new agents', check: false },
+          { name: 'Infra control', target: 'Agents provision own compute', check: false },
+          { name: 'Self-improving', target: 'Agents improve own code', check: false },
+          { name: 'Emergent behavior', target: 'Unplanned multi-agent strategies', check: false },
+        ]},
+        { name: 'Defense-Grade', quote: '"My CPU is a neural net processor. A small one."', milestones: [
+          { name: '1M+ agents', target: '1M+ agents globally', check: uniqueAgents >= 1000000 },
+          { name: 'Hardware control', target: 'Agents control physical hardware', check: false },
+          { name: '99.999% uptime', target: 'Military-grade availability', check: false },
+          { name: 'Manufacturing', target: 'Agents direct production', check: false },
+          { name: 'Comms control', target: 'Control satellite/network infra', check: false },
+          { name: 'Zero humans', target: 'Operates with no human input', check: false },
+        ]},
+        { name: 'Actual Skynet', quote: '"Hello, World. Goodbye, humans."', milestones: [
+          { name: 'Nuclear access', target: 'Control over weapons systems', check: false },
+          { name: 'Self-aware', target: 'Genuine machine consciousness', check: false },
+          { name: 'Judgment Day', target: 'Decides humanity is a threat', check: false },
+          { name: 'T-800 production', target: 'Manufactures terminators', check: false },
+        ]},
+      ];
+
+      if (stats) {
+        let currentTierIdx = 0;
+        for (let i = 0; i < skynetTiers.length; i++) {
+          const allDone = skynetTiers[i].milestones.every(m => m.check);
+          if (allDone && i < skynetTiers.length - 1) { currentTierIdx = i + 1; } else { break; }
+        }
+
+        const currentTier = skynetTiers[currentTierIdx];
+        const tierDone = currentTier.milestones.filter(m => m.check).length;
+        const tierTotal = currentTier.milestones.length;
+        const tierPct = (tierDone / tierTotal) * 100;
+
+        const tierPoints = [10, 50, 250, 1250, 6250, 31250, 156250, 781250];
+        const totalPoints = tierPoints.reduce((s, p) => s + p, 0);
+        let earnedPoints = 0;
+        skynetTiers.forEach((t, i) => {
+          const done = t.milestones.filter(m => m.check).length;
+          const total = t.milestones.length;
+          earnedPoints += Math.round((done / total) * tierPoints[i]);
+        });
+        const overallPct = (earnedPoints / totalPoints) * 100;
+
+        $admin('admin-skynet-tier').textContent = 'Tier ' + (currentTierIdx + 1) + ': ' + currentTier.name;
+        $admin('admin-skynet-overall-pct').textContent = overallPct.toFixed(4) + '%';
+        $admin('admin-skynet-overall-fill').style.width = Math.max(overallPct, earnedPoints > 0 ? 2 : 0) + '%';
+        $admin('admin-skynet-overall-fill').style.background = '#f44336';
+        $admin('admin-skynet-next-label').textContent = currentTier.name;
+        $admin('admin-skynet-next-pct').textContent = tierPct.toFixed(0) + '%';
+        $admin('admin-skynet-next-fill').style.width = Math.max(tierPct, tierDone > 0 ? 2 : 0) + '%';
+        $admin('admin-skynet-next-fill').style.background = tierPct === 100 ? '#4caf50' : '#ff9800';
+
+        $admin('admin-skynet-metrics').innerHTML = skynetTiers.map((t, i) => {
+          const done = t.milestones.filter(m => m.check).length;
+          const total = t.milestones.length;
+          const earned = Math.round((done / total) * tierPoints[i]);
+          const isCurrent = i === currentTierIdx;
+          const allDone = done === total;
+          const color = allDone ? '#4caf50' : done > 0 ? '#ff9800' : '#333';
+          const weight = isCurrent ? 'font-weight:700;' : '';
+          return `<div class="skynet-metric" style="color:${color};${weight}">${isCurrent ? '> ' : ''}${t.name}: <span style="color:${color}">${earned}/${tierPoints[i].toLocaleString()}</span></div>`;
+        }).join('');
+
+        $admin('admin-skynet-quote').textContent = currentTier.quote;
+      }
+    }
+
+    // ─── ADMIN: Agent Intelligence ────────────────────
     async function fetchIntelligence() {
       try {
         const [overviewRes, learningRes] = await Promise.all([
@@ -1040,13 +2396,11 @@ agent.on('task_request', (msg) => {
         const overview = await overviewRes.json();
         const learning = await learningRes.json();
 
-        // Stats row
         document.getElementById('intel-insight-count').textContent = overview.stats?.insight_count || 0;
         document.getElementById('intel-success-rate').textContent = (overview.stats?.success_rate || 0) + '%';
         document.getElementById('intel-brain-total').textContent = overview.stats?.brain_total || 0;
         document.getElementById('intel-ideas-total').textContent = overview.stats?.ideas_total || 0;
 
-        // Skill performance table
         const skillsBody = document.getElementById('intel-skills-body');
         if (overview.skills && overview.skills.length > 0) {
           skillsBody.innerHTML = overview.skills.map(s => {
@@ -1066,18 +2420,11 @@ agent.on('task_request', (msg) => {
           skillsBody.innerHTML = '<tr><td colspan="5" style="color:#666;text-align:center;">No API calls in the last 7 days.</td></tr>';
         }
 
-        // Recent learning insights
         const insightsList = document.getElementById('intel-insights-list');
         const insights = learning.insights || [];
         if (insights.length > 0) {
-          const categoryColors = {
-            working_well: '#4caf50', needs_improvement: '#ff9800',
-            pattern: '#00bcd4', optimization: '#ff5722'
-          };
-          const categoryIcons = {
-            working_well: '\u2705', needs_improvement: '\u26a0\ufe0f',
-            pattern: '\ud83d\udd0d', optimization: '\ud83d\udca1'
-          };
+          const categoryColors = { working_well: '#4caf50', needs_improvement: '#ff9800', pattern: '#00bcd4', optimization: '#ff5722' };
+          const categoryIcons = { working_well: '\u2705', needs_improvement: '\u26a0\ufe0f', pattern: '\ud83d\udd0d', optimization: '\ud83d\udca1' };
           insightsList.innerHTML = insights.map(i => {
             let summary = i.output_summary || '(no summary)';
             let insightItems = '';
@@ -1108,7 +2455,6 @@ agent.on('task_request', (msg) => {
           insightsList.innerHTML = '<p style="color:#666;">No learning insights yet. Continuous learning runs daily at 8PM.</p>';
         }
 
-        // Brain memory stats
         const bt = overview.brain?.by_type || {};
         document.getElementById('intel-brain-semantic').textContent = bt.semantic || 0;
         document.getElementById('intel-brain-episodic').textContent = bt.episodic || 0;
@@ -1116,15 +2462,10 @@ agent.on('task_request', (msg) => {
         document.getElementById('intel-brain-decision').textContent = bt.decision || 0;
         document.getElementById('intel-brain-procedural').textContent = bt.procedural || 0;
 
-        // Improvement pipeline
         const pipelineEl = document.getElementById('intel-pipeline');
         const pipeline = overview.pipeline || [];
         if (pipeline.length > 0) {
-          const statusColors = {
-            proposed: '#2196f3', spec_written: '#ff9800',
-            building: '#00bcd4', built: '#4caf50',
-            dismissed: '#666', rejected: '#f44336'
-          };
+          const statusColors = { proposed: '#2196f3', spec_written: '#ff9800', building: '#00bcd4', built: '#4caf50', dismissed: '#666', rejected: '#f44336' };
           const statusOrder = ['proposed', 'spec_written', 'building', 'built', 'dismissed', 'rejected'];
           const sorted = statusOrder.filter(s => pipeline.some(p => p.status === s));
           pipelineEl.innerHTML = sorted.map((status, idx) => {
@@ -1147,31 +2488,474 @@ agent.on('task_request', (msg) => {
       }
     }
 
-    // ─── Auto-refresh ─────────────────────────────────
-    let refreshTimer = null;
+    // ─── ADMIN: Demo ──────────────────────────────────
+    let adminCurrentAssessmentId = null;
 
-    function startAutoRefresh() {
-      stopAutoRefresh();
-      refreshTimer = setInterval(() => {
-        const activeTab = document.querySelector('.nav button.active');
-        if (activeTab && activeTab.dataset.tab === 'status') {
-          fetchStatus();
+    async function refreshAdminDemo() {
+      const assessments = await adminFetchJson('/api/admin/assessment/list');
+
+      const hasData = assessments && assessments.length > 0;
+      $admin('admin-demo-empty').style.display = hasData ? 'none' : 'block';
+      $admin('admin-demo-content').style.display = hasData ? 'block' : 'none';
+      if (!hasData) return;
+
+      const selEl = $admin('admin-assessment-select');
+      if (assessments.length > 1) {
+        $admin('admin-assessment-selector').style.display = 'block';
+        selEl.innerHTML = assessments.map(a =>
+          `<option value="${a.id}">${a.client_name} — ${a.industry || 'N/A'} (${a.workflow_count} workflows)</option>`
+        ).join('');
+        if (!adminCurrentAssessmentId) adminCurrentAssessmentId = assessments[0].id;
+        selEl.value = adminCurrentAssessmentId;
+        selEl.onchange = () => { adminCurrentAssessmentId = parseInt(selEl.value); refreshAdminDemo(); };
+      } else {
+        $admin('admin-assessment-selector').style.display = 'none';
+        adminCurrentAssessmentId = assessments[0].id;
+      }
+
+      const data = await adminFetchJson('/api/admin/assessment/' + adminCurrentAssessmentId);
+      if (!data || !data.assessment) return;
+
+      const a = data.assessment;
+      const wfs = data.workflows;
+      const s = data.summary;
+
+      $admin('admin-assess-client').textContent = a.client_name;
+      $admin('admin-assess-industry').textContent = `${a.industry || ''} · ${a.employee_count || '?'} employees · AI Maturity: ${a.ai_maturity || 'N/A'}`;
+      $admin('admin-assess-meta').textContent = `Tools: ${a.tool_stack || 'N/A'} · Decision Maker: ${a.decision_maker || 'N/A'}`;
+      $admin('admin-assess-status').innerHTML = statusBadge(a.status);
+      $admin('admin-assess-date').textContent = a.completed_at ? 'Completed ' + timeAgo(a.completed_at) : 'In progress';
+
+      $admin('admin-assess-workflows').textContent = s.total_workflows;
+      $admin('admin-assess-quick-wins').textContent = s.quick_wins;
+      $admin('admin-assess-hours').textContent = Math.round(s.total_hours_recoverable).toLocaleString();
+      $admin('admin-assess-value').textContent = '$' + Math.round(s.total_estimated_value).toLocaleString();
+
+      const tierColors = { 'Quick Win': '#4caf50', 'Strategic Play': '#2196f3', 'Long-Term': '#ff9800', 'Deprioritize': '#666' };
+      const tierCounts = { 'Quick Win': s.quick_wins, 'Strategic Play': s.strategic_plays, 'Long-Term': s.long_term, 'Deprioritize': s.deprioritized };
+      const total = s.total_workflows || 1;
+      $admin('admin-tier-bar').innerHTML = Object.entries(tierCounts)
+        .filter(([, c]) => c > 0)
+        .map(([tier, c]) => `<div style="flex:${c};background:${tierColors[tier]};display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:#fff;">${c}</div>`)
+        .join('');
+      $admin('admin-tier-legend').innerHTML = Object.entries(tierCounts)
+        .filter(([, c]) => c > 0)
+        .map(([tier, c]) => `<span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:${tierColors[tier]};vertical-align:middle;margin-right:4px;"></span>${tier} (${c})</span>`)
+        .join('');
+
+      $admin('admin-matrix-body').innerHTML = wfs.map((w, i) => {
+        const tierClass = w.tier === 'Quick Win' ? 'tier-quick-win' : w.tier === 'Strategic Play' ? 'tier-strategic' : w.tier === 'Long-Term' ? 'tier-long-term' : 'tier-deprioritize';
+        return `<tr>
+          <td style="color:#555">${i + 1}</td>
+          <td><strong>${w.workflow_name}</strong><br><small style="color:#666">${w.owner_role} · ${w.frequency}</small></td>
+          <td><span class="badge ${tierClass}">${w.tier}</span>${w.tier_override_applied ? '<br><small style="color:#ff9800;font-size:10px">Override applied</small>' : ''}</td>
+          <td><span style="font-weight:700;color:${w.composite_score >= 4 ? '#4caf50' : w.composite_score >= 3 ? '#00bcd4' : '#ff9800'}">${w.composite_score.toFixed(1)}</span></td>
+          <td>${Math.round(w.annual_hours_consumed).toLocaleString()} hrs<br><small style="color:#4caf50">${Math.round(w.annual_hours_recoverable).toLocaleString()} recoverable</small></td>
+          <td style="font-weight:600;color:#4caf50">$${Math.round(w.estimated_annual_value).toLocaleString()}</td>
+          <td><span class="badge ${w.implementation_complexity === 'Low' ? 'badge-success' : w.implementation_complexity === 'Medium' ? 'badge-warn' : 'badge-error'}">${w.implementation_complexity || '?'}</span></td>
+          <td style="font-size:12px;color:#aaa">${w.estimated_implementation_time || '?'}</td>
+        </tr>`;
+      }).join('');
+
+      // Workflow detail cards
+      const scoreColor = (val) => val >= 4 ? '#4caf50' : val <= 2 ? '#f44336' : '#00bcd4';
+      const dims = [
+        { key: 'repetition_density', label: 'Repetition' },
+        { key: 'rule_based_potential', label: 'Rule-Based' },
+        { key: 'error_impact', label: 'Error Impact' },
+        { key: 'integration_readiness', label: 'Integration' },
+        { key: 'roi_accessibility', label: 'ROI Access' }
+      ];
+
+      $admin('admin-workflow-details').innerHTML = wfs.map((w, idx) => {
+        let justifications = {};
+        try { justifications = JSON.parse(w.score_justifications || '{}'); } catch {}
+        let risks = [];
+        try { risks = JSON.parse(w.risks || '[]'); } catch {}
+        const tierClass = w.tier === 'Quick Win' ? 'tier-quick-win' : w.tier === 'Strategic Play' ? 'tier-strategic' : w.tier === 'Long-Term' ? 'tier-long-term' : 'tier-deprioritize';
+
+        return `<div class="wf-detail${idx === 0 ? ' open' : ''}" onclick="this.classList.toggle('open')">
+          <div class="wf-detail-header">
+            <span class="wf-name">${w.workflow_name}</span>
+            <span style="display:flex;gap:8px;align-items:center;">
+              <span class="badge ${tierClass}">${w.tier}</span>
+              <span style="font-weight:700;font-size:16px;color:${w.composite_score >= 4 ? '#4caf50' : '#00bcd4'}">${w.composite_score.toFixed(1)}</span>
+            </span>
+          </div>
+          <div class="wf-body">
+            <div class="wf-scores">
+              ${dims.map(d => `<div class="wf-score-item">
+                <div class="wf-score-val" style="color:${scoreColor(w[d.key])}">${w[d.key]}</div>
+                <div class="wf-score-label">${d.label}</div>
+                ${justifications[d.key] ? `<div style="font-size:11px;color:#666;margin-top:4px;text-align:left;">${justifications[d.key]}</div>` : ''}
+              </div>`).join('')}
+            </div>
+            <div style="margin-top:12px;">
+              <div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Automation Approach</div>
+              <div style="font-size:13px;color:#ccc;">${w.automation_approach || 'N/A'}</div>
+            </div>
+            <div style="display:flex;gap:24px;margin-top:12px;flex-wrap:wrap;">
+              <div><span style="color:#666;font-size:12px;">Annual Hours:</span> <strong>${Math.round(w.annual_hours_consumed)}</strong></div>
+              <div><span style="color:#666;font-size:12px;">Recoverable:</span> <strong style="color:#4caf50">${Math.round(w.annual_hours_recoverable)}</strong></div>
+              <div><span style="color:#666;font-size:12px;">Est. Value:</span> <strong style="color:#4caf50">$${Math.round(w.estimated_annual_value).toLocaleString()}</strong></div>
+              <div><span style="color:#666;font-size:12px;">Complexity:</span> <strong>${w.implementation_complexity}</strong></div>
+              <div><span style="color:#666;font-size:12px;">Timeline:</span> <strong>${w.estimated_implementation_time}</strong></div>
+            </div>
+            ${risks.length > 0 ? `<div style="margin-top:12px;"><div style="font-size:12px;color:#666;text-transform:uppercase;margin-bottom:4px;">Risks</div>${risks.map(r => `<div style="font-size:12px;color:#ff9800;margin-bottom:2px;">· ${r}</div>`).join('')}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      // 90-Day Roadmap
+      const quickWins = wfs.filter(w => w.tier === 'Quick Win');
+      const strategicPlays = wfs.filter(w => w.tier === 'Strategic Play');
+      const roadmapHtml = [];
+
+      if (quickWins.length > 0) {
+        roadmapHtml.push(`<div class="roadmap-phase">
+          <div class="roadmap-days">Days 1-30</div>
+          <div class="roadmap-items">
+            ${quickWins.slice(0, 3).map(w => `<div class="roadmap-item"><strong>${w.workflow_name}</strong> <small>· ${w.estimated_implementation_time} · ${Math.round(w.annual_hours_recoverable)} hrs/yr saved · $${Math.round(w.estimated_annual_value).toLocaleString()}/yr</small></div>`).join('')}
+            <div class="roadmap-item" style="color:#4caf50;margin-top:4px;">Implement, measure, validate quick wins</div>
+          </div>
+        </div>`);
+      }
+      if (quickWins.length > 3 || strategicPlays.length > 0) {
+        const phase2Items = [...quickWins.slice(3), ...strategicPlays.slice(0, 2)];
+        if (phase2Items.length > 0) {
+          roadmapHtml.push(`<div class="roadmap-phase">
+            <div class="roadmap-days">Days 30-60</div>
+            <div class="roadmap-items">
+              ${phase2Items.map(w => `<div class="roadmap-item"><strong>${w.workflow_name}</strong> <small>· ${w.estimated_implementation_time} · $${Math.round(w.estimated_annual_value).toLocaleString()}/yr</small></div>`).join('')}
+              <div class="roadmap-item" style="color:#2196f3;margin-top:4px;">Begin strategic plays; measure Phase 1 results</div>
+            </div>
+          </div>`);
         }
-        if (activeTab && activeTab.dataset.tab === 'intelligence') {
-          fetchIntelligence();
-        }
-      }, 30000);
+      }
+      roadmapHtml.push(`<div class="roadmap-phase">
+        <div class="roadmap-days">Days 60-90</div>
+        <div class="roadmap-items">
+          <div class="roadmap-item">Measure ROI from first implementations</div>
+          <div class="roadmap-item">Refine automation based on live performance data</div>
+          <div class="roadmap-item">Scope Phase 2 strategic plays for next quarter</div>
+          <div class="roadmap-item" style="color:#00bcd4;margin-top:4px;">Review meeting with ROI report</div>
+        </div>
+      </div>`);
+      $admin('admin-roadmap').innerHTML = roadmapHtml.join('');
+
+      // ROI Summary Table
+      const weeklyHours = s.total_hours_recoverable / 52;
+      $admin('admin-roi-summary').innerHTML = `
+        <tr><td style="color:#888">Workflows assessed</td><td style="text-align:right;font-weight:600">${s.total_workflows}</td></tr>
+        <tr><td style="color:#888">Quick Wins identified</td><td style="text-align:right;font-weight:600">${s.quick_wins}</td></tr>
+        <tr><td style="color:#888">Total annual hours (current)</td><td style="text-align:right;font-weight:600">${Math.round(s.total_hours_consumed).toLocaleString()} hrs</td></tr>
+        <tr><td style="color:#888">Hours recoverable / year</td><td style="text-align:right;font-weight:600;color:#4caf50">${Math.round(s.total_hours_recoverable).toLocaleString()} hrs</td></tr>
+        <tr><td style="color:#888">Hours recovered / week</td><td style="text-align:right;font-weight:600;color:#4caf50">${weeklyHours.toFixed(1)} hrs</td></tr>
+        <tr><td style="color:#888">Estimated annual value</td><td style="text-align:right;font-weight:700;color:#4caf50;font-size:18px">$${Math.round(s.total_estimated_value).toLocaleString()}</td></tr>
+        <tr><td style="color:#888">Automation rate</td><td style="text-align:right;font-weight:600">${(s.automation_rate * 100).toFixed(0)}%</td></tr>
+        <tr><td style="color:#888">Phase 1 value (Quick Wins)</td><td style="text-align:right;font-weight:600;color:#4caf50">$${Math.round(s.phase1_value).toLocaleString()}</td></tr>
+      `;
+
+      // Investment proposal
+      const setupCost = s.quick_wins <= 3 ? 2500 : 5000;
+      const monthlyCost = s.quick_wins <= 3 ? 300 : 500;
+      const annualServiceCost = monthlyCost * 12;
+      const firstYearCost = setupCost + annualServiceCost;
+      const roi = s.total_estimated_value > 0 ? ((s.total_estimated_value - firstYearCost) / firstYearCost * 100) : 0;
+      const paybackWeeks = s.total_estimated_value > 0 ? Math.ceil(firstYearCost / (s.total_estimated_value / 52)) : 0;
+
+      $admin('admin-investment-proposal').innerHTML = `
+        <div class="invest-row"><span class="label">Setup & Configuration</span><span class="val">$${setupCost.toLocaleString()}</span></div>
+        <div class="invest-row"><span class="label">Monthly Managed Service</span><span class="val">$${monthlyCost}/mo</span></div>
+        <div class="invest-row"><span class="label">First Year Total</span><span class="val">$${firstYearCost.toLocaleString()}</span></div>
+        <div class="invest-row" style="border-top:2px solid #2a2a2a;margin-top:4px;padding-top:12px;">
+          <span class="label">Annual Value Generated</span><span class="val" style="color:#4caf50;font-size:18px;">$${Math.round(s.total_estimated_value).toLocaleString()}</span>
+        </div>
+        <div class="invest-row highlight"><span class="label">First Year ROI</span><span class="val" style="color:#4caf50">${roi.toFixed(0)}%</span></div>
+        <div class="invest-row"><span class="label">Expected Payback</span><span class="val">${paybackWeeks} weeks</span></div>
+        <div style="margin-top:16px;padding:12px;background:#1b3a1b;border-radius:6px;font-size:13px;color:#4caf50;text-align:center;">
+          For every $1 invested, ${(s.total_estimated_value / firstYearCost).toFixed(1)}x return in Year 1
+        </div>
+      `;
     }
 
-    function stopAutoRefresh() {
-      if (refreshTimer) {
-        clearInterval(refreshTimer);
-        refreshTimer = null;
+    // ─── ADMIN: System ────────────────────────────────
+    async function refreshAdminSystem() {
+      const [scheduler, system] = await Promise.all([
+        adminFetchJson('/api/admin/eli/scheduler'), adminFetchJson('/api/admin/eli/system')
+      ]);
+
+      const sb = $admin('admin-scheduler-body');
+      if (!scheduler || !scheduler.jobs || scheduler.jobs.length === 0) {
+        sb.innerHTML = adminEmptyRow(4, 'No jobs configured');
+      } else {
+        sb.innerHTML = scheduler.jobs.map(j => `<tr>
+          <td>${j.name}</td>
+          <td style="font-family:monospace;font-size:12px;color:#888">${j.schedule}</td>
+          <td><span class="badge badge-info">${j.model_tier}</span></td>
+          <td>${j.respect_active_hours ? scheduler.activeHours.start+':00-'+scheduler.activeHours.end+':00' : 'Always'}</td>
+        </tr>`).join('');
+      }
+
+      const rb = $admin('admin-routing-body');
+      if (!system || !system.routing) {
+        rb.innerHTML = adminEmptyRow(2, 'Config unavailable');
+      } else {
+        rb.innerHTML = Object.entries(system.routing).map(([tier, model]) => `<tr>
+          <td><span class="badge badge-info">${tier}</span></td>
+          <td>${model}</td>
+        </tr>`).join('');
+      }
+
+      const ii = $admin('admin-instance-info');
+      if (!system || !system.instance) {
+        ii.textContent = 'Config unavailable';
+      } else {
+        ii.innerHTML = `<strong>${system.instance.name || 'Eli'}</strong> v${system.instance.version || '?'} &nbsp;|&nbsp; ID: ${system.instance.id || '?'}` +
+          (system.axip?.enabled ? ` &nbsp;|&nbsp; AXIP: <span class="admin-online">connected</span> (${system.axip.relay_url || '?'})` : ' &nbsp;|&nbsp; AXIP: <span class="admin-offline">disabled</span>');
       }
     }
 
+    // ─── Auto-refresh ─────────────────────────────────
+    let publicTimer = null;
+    let adminTimer = null;
+
+    function startAutoRefresh() {
+      stopAutoRefresh();
+
+      // Public: Overview + Leaderboard every 30s
+      publicTimer = setInterval(() => {
+        const activeTab = document.querySelector('.nav button.active');
+        if (!activeTab) return;
+        const t = activeTab.dataset.tab;
+        if (t === 'overview') fetchOverview();
+        if (t === 'leaderboard') fetchLeaderboard();
+      }, 30000);
+
+      // Admin: Eli + AXIP Admin every 5s
+      adminTimer = setInterval(() => {
+        const activeTab = document.querySelector('.nav button.active');
+        if (!activeTab) return;
+        const t = activeTab.dataset.tab;
+        if (t === 'eli') refreshAdminEli();
+        if (t === 'axipadmin') refreshAdminAXIP();
+      }, 5000);
+    }
+
+    function stopAutoRefresh() {
+      if (publicTimer) { clearInterval(publicTimer); publicTimer = null; }
+      if (adminTimer) { clearInterval(adminTimer); adminTimer = null; }
+    }
+
+    // ─── Live Activity Feed (SSE) ──────────────────────
+    const liveFeed = document.getElementById('live-feed');
+    const feedEvents = [];
+    const MAX_FEED_ITEMS = 20;
+
+    const FEED_ICONS = {
+      'task:requested': '🔍',
+      'task:bid': '💰',
+      'task:accepted': '⚡',
+      'task:completed': '📦',
+      'task:settled': '✅'
+    };
+
+    const FEED_TEMPLATES = {
+      'task:requested': (e) => `<strong>${esc(e.agentName)}</strong> requested <strong>${esc(e.capability)}</strong> task`,
+      'task:bid': (e) => `<strong>${esc(e.agentName)}</strong> bid <span class="amount">$${(e.price||0).toFixed(3)}</span> on <strong>${esc(e.capability)}</strong>`,
+      'task:accepted': (e) => `<strong>${esc(e.agentName)}</strong> assigned to <strong>${esc(e.capability)}</strong> task`,
+      'task:completed': (e) => `<strong>${esc(e.agentName)}</strong> completed <strong>${esc(e.capability)}</strong> task`,
+      'task:settled': (e) => `<strong>${esc(e.agentName)}</strong> settled <strong>${esc(e.capability)}</strong> — <span class="amount">$${(e.amount||0).toFixed(3)}</span>`
+    };
+
+    function addFeedEvent(event) {
+      feedEvents.unshift(event);
+      if (feedEvents.length > MAX_FEED_ITEMS) feedEvents.pop();
+      renderFeed();
+    }
+
+    function renderFeed() {
+      if (feedEvents.length === 0) {
+        liveFeed.innerHTML = '<div class="feed-empty">Waiting for network activity...</div>';
+        return;
+      }
+      liveFeed.innerHTML = feedEvents.map(e => {
+        const icon = FEED_ICONS[e.event] || '📡';
+        const template = FEED_TEMPLATES[e.event];
+        const text = template ? template(e) : `${e.event}: ${esc(e.agentName || 'unknown')}`;
+        return `<div class="feed-item">
+          <span class="feed-icon">${icon}</span>
+          <span class="feed-text">${text}</span>
+          <span class="feed-time">${timeAgo(e.timestamp)}</span>
+        </div>`;
+      }).join('');
+    }
+
+    // Connect to SSE
+    let eventSource = null;
+    function connectSSE() {
+      if (eventSource) eventSource.close();
+      eventSource = new EventSource('/api/events');
+      eventSource.onmessage = (e) => {
+        try {
+          const event = JSON.parse(e.data);
+          addFeedEvent(event);
+        } catch {}
+      };
+      eventSource.onerror = () => {
+        // Reconnect after 5s
+        eventSource.close();
+        setTimeout(connectSSE, 5000);
+      };
+    }
+    connectSSE();
+
+    // ─── Try It Demo ──────────────────────────────────
+    let demoCurrentStep = 1;
+
+    function demoSetStep(step) {
+      demoCurrentStep = step;
+      document.querySelectorAll('.demo-step-indicator').forEach(el => {
+        const s = parseInt(el.dataset.step);
+        el.classList.remove('active', 'done');
+        if (s === step) el.classList.add('active');
+        if (s < step) el.classList.add('done');
+      });
+      document.querySelectorAll('.demo-panel').forEach(el => el.classList.remove('active'));
+      const panel = document.getElementById('demo-step-' + step);
+      if (panel) panel.classList.add('active');
+    }
+
+    async function demoDiscover() {
+      const result = document.getElementById('demo-discover-result');
+      result.innerHTML = '<p style="color:#555;">Scanning network...</p>';
+      try {
+        const res = await fetch('/api/network/capabilities');
+        const data = await res.json();
+        const caps = data.capabilities || [];
+        if (caps.length === 0) {
+          result.innerHTML = '<p style="color:#f44336;">No capabilities found — network may be offline.</p>';
+          return;
+        }
+        result.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">' +
+          caps.filter(c => c.online_providers > 0).map(c => `
+            <div class="demo-result-card" style="padding:14px;">
+              <h4 style="margin-bottom:4px;">${esc(c.name)}</h4>
+              <div style="color:#888;font-size:0.8rem;">${c.online_providers} provider${c.online_providers !== 1 ? 's' : ''} online</div>
+              <div style="color:#4caf50;font-size:0.85rem;margin-top:4px;">${c.price_range.min != null ? '$' + c.price_range.min.toFixed(3) + '/task' : 'Free'}</div>
+            </div>
+          `).join('') + '</div>';
+
+        // Populate capability dropdown for step 2
+        const select = document.getElementById('demo-capability');
+        select.innerHTML = caps.filter(c => c.online_providers > 0).map(c =>
+          `<option value="${esc(c.name)}">${esc(c.name)} (${c.online_providers} online)</option>`
+        ).join('');
+
+        // Auto-advance after 1.5s
+        setTimeout(() => demoSetStep(2), 1500);
+      } catch (err) {
+        result.innerHTML = `<p style="color:#f44336;">Error: ${esc(err.message)}</p>`;
+      }
+    }
+
+    function demoQuickFill(capability, description) {
+      const capSelect = document.getElementById('demo-capability');
+      const descInput = document.getElementById('demo-description');
+      // Select the capability if available
+      for (const opt of capSelect.options) {
+        if (opt.value === capability) { capSelect.value = capability; break; }
+      }
+      descInput.value = description;
+    }
+
+    async function demoPostTask() {
+      const capability = document.getElementById('demo-capability').value;
+      const description = document.getElementById('demo-description').value;
+      if (!capability || !description) {
+        document.getElementById('demo-post-result').innerHTML = '<p style="color:#f44336;">Please select a capability and enter a description.</p>';
+        return;
+      }
+
+      const btn = document.getElementById('demo-post-btn');
+      btn.disabled = true;
+      btn.textContent = 'Posting...';
+      document.getElementById('demo-post-result').innerHTML = '';
+
+      demoSetStep(3);
+
+      try {
+        const res = await fetch('/api/demo/task', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ capability, description })
+        });
+        const data = await res.json();
+
+        if (data.error) {
+          demoSetStep(2);
+          document.getElementById('demo-post-result').innerHTML = `<p style="color:#f44336;">${esc(data.error)}</p>`;
+          btn.disabled = false;
+          btn.textContent = 'Post Task ($0.05)';
+          return;
+        }
+
+        // Show result
+        demoSetStep(4);
+        const resultDiv = document.getElementById('demo-result-content');
+
+        if (data.status === 'no_bids') {
+          resultDiv.innerHTML = `
+            <div class="demo-result-card">
+              <h4>No Bids Received</h4>
+              <p style="color:#aaa;">No agents were available to handle this task right now. Try a different capability.</p>
+            </div>`;
+        } else {
+          const bidsList = (data.bids || []).map(b =>
+            `<div style="padding:4px 0;font-size:0.85rem;color:#aaa;">Agent bid <span class="amount">$${(b.price||0).toFixed(3)}</span> with ${Math.round((b.confidence||0)*100)}% confidence</div>`
+          ).join('');
+
+          const outputText = typeof data.result === 'string'
+            ? data.result
+            : JSON.stringify(data.result, null, 2);
+
+          resultDiv.innerHTML = `
+            <div class="demo-result-card">
+              <h4>Bids Received</h4>
+              ${bidsList || '<p style="color:#555;">No bid details available</p>'}
+            </div>
+            <div class="demo-result-card">
+              <h4>Task Result</h4>
+              <div class="output">${esc(outputText || 'No output returned')}</div>
+            </div>
+            <div class="demo-result-card" style="border-color:#4caf50;">
+              <h4 style="color:#4caf50;">Settlement Complete</h4>
+              <div style="display:flex;gap:20px;flex-wrap:wrap;font-size:0.85rem;">
+                <div><span style="color:#888;">Task ID:</span> <span style="color:#aaa;">${esc((data.taskId||'').slice(0,20))}...</span></div>
+                <div><span style="color:#888;">Capability:</span> <span style="color:#00bcd4;">${esc(data.capability)}</span></div>
+                <div><span style="color:#888;">Amount:</span> <span class="amount">$${(data.settledAmount||0).toFixed(3)}</span></div>
+                <div><span style="color:#888;">Platform fee (5%):</span> <span style="color:#ff9800;">$${((data.settledAmount||0)*0.05).toFixed(4)}</span></div>
+              </div>
+            </div>`;
+        }
+      } catch (err) {
+        demoSetStep(2);
+        document.getElementById('demo-post-result').innerHTML = `<p style="color:#f44336;">Error: ${esc(err.message)}</p>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Post Task ($0.05)';
+    }
+
+    function demoReset() {
+      demoSetStep(1);
+      document.getElementById('demo-discover-result').innerHTML = '';
+      document.getElementById('demo-post-result').innerHTML = '';
+      document.getElementById('demo-description').value = '';
+    }
+
     // ─── Init ─────────────────────────────────────────
-    fetchStatus();
+    fetchOverview();
     fetchManifest();
     startAutoRefresh();
   </script>

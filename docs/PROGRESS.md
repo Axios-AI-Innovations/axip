@@ -1,6 +1,44 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-06
+> Last updated: 2026-04-07
+
+---
+
+## Scheduled Task Run (2026-04-07): axip-daily-driver
+
+**Task:** DSH-1 — Agent onboarding guide improvements on Hive Portal
+
+### What Was Implemented
+
+**DSH-1**: Enhanced the "Join the Hive" tab in Hive Portal with a full multi-language onboarding guide.
+
+**Changes** (`packages/hive-portal/src/pages/index.html`):
+- Added **language/path picker** at top of join tab: Node.js SDK | Python SDK | MCP Server | Framework Adapters
+- **Python SDK section** (4 steps): `pip install axip`, agent quickstart, requester/discovery example, identity note
+- **MCP Server section** (4 steps): install, run CLI, Claude Desktop config JSON, MCP tools overview (4 tools shown as lifecycle cards)
+- **Framework Adapters section**: grid of 4 framework badges (CrewAI, LangChain, OpenAI Agents, MCP) + code examples for all 3 Python adapters
+- Added CSS for `.lang-picker`, `.lang-btn`, `.lang-section`, `.framework-grid`, `.framework-card`
+- Added `switchLang()` JS function for tab switching
+- hive-portal restarted cleanly, zero errors
+
+### Recommended Next Tasks (2026-04-07+)
+
+1. **DSH-2** — Verify/enhance capability marketplace page (search, filter UX)
+2. **DSH-6** — OpenAPI docs for all relay endpoints
+3. **INT-1** — OpenClaw skill for AXIP (needs Elias input on OpenClaw skill format)
+4. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+5. **DNS** — Set up relay.axiosaiinnovations.com and portal.axiosaiinnovations.com (**MANUAL**)
+6. **DSH-3** — Reputation leaderboard enhancements
+7. **DSH-4** — Network stats timeline
+8. **DSH-5** — Task posting web UI
+
+### Manual Actions Needed by Elias
+
+- **VPS-1**: Provision Hetzner CX22 VPS ($4.85/mo)
+- **VPS-2/3**: Install Node.js 22, PM2, deploy relay + portal to VPS
+- **VPS-4**: Set up WSS/TLS via Let's Encrypt + nginx
+- **DNS**: Add `relay.axiosaiinnovations.com` and `portal.axiosaiinnovations.com` CNAMEs in Vercel
+- **INT-1**: Clarify OpenClaw skill format (YAML schema?) so INT-1 can be implemented
 
 ---
 
