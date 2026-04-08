@@ -4,6 +4,117 @@
 
 ---
 
+## Evening Verification Run (2026-04-07): axip-test-verify
+
+**Task:** Evening verification — test all services and validate today's DSH-1 implementation
+
+### What Was Implemented Today
+
+- **DSH-1** (1 commit): Multi-language agent onboarding guide on Hive Portal
+  - Added language/path picker: Node.js SDK | Python SDK | MCP Server | Framework Adapters
+  - Python SDK section (4 steps): pip install, quickstart, requester/discovery, identity
+  - MCP Server section (4 steps): install, CLI run, Claude Desktop config, MCP tools overview
+  - Framework Adapters section: grid of 4 framework badges + code examples
+  - CSS: `.lang-picker`, `.lang-btn`, `.lang-section`, `.framework-grid`, `.framework-card`
+  - JS: `switchLang()` tab switching function
+
+### Test Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Relay process (node, port 4200) | ✅ PASS | 7 active WebSocket connections from agents |
+| Relay stats API (port 4201) | ✅ PASS | 7 agents online, 35 total, 14 tasks settled, $0.18 |
+| Portal (port 4202) | ✅ PASS | relay_online=true, 9 capabilities listed, 14 tasks completed |
+| DSH-1 lang-picker UI | ✅ PASS | 14 matches for lang-picker/switchLang/Python SDK/MCP Server/Framework Adapters in index.html |
+| Online agents (7) | ✅ PASS | summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta |
+| Errors | ✅ PASS | No errors found |
+
+### Issues Found
+
+None — all services healthy, DSH-1 implementation verified.
+
+### Recommended Next Tasks (2026-04-08)
+
+1. **DSH-2** — Verify/enhance capability marketplace page (search, filter UX)
+2. **DSH-6** — OpenAPI docs for all relay endpoints
+3. **MCP-7** — Publish `@axip/mcp-server` to npm
+4. **INT-1** — OpenClaw skill for AXIP (needs Elias input on OpenClaw skill YAML format)
+5. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+6. **DNS** — Set up relay.axiosaiinnovations.com and portal.axiosaiinnovations.com (**MANUAL**)
+
+---
+
+## Scheduled Task Run (2026-04-07): axip-mcp-server-build
+
+**Task:** MCP-1 through MCP-6 — @axip/mcp-server package
+
+**Result: All tasks already complete — package exists and verified working.**
+
+### What Was Checked
+
+The `packages/mcp-server/` package was already fully implemented from a prior session. Verified:
+
+| Task | File | Status |
+|------|------|--------|
+| MCP-1 | `packages/mcp-server/package.json` + `src/index.js` + `bin/axip-mcp.js` | ✅ Complete — ES module package with `@axip/mcp-server` name, bin entry `axip-mcp`, uses `@modelcontextprotocol/sdk` and `@axip/sdk` |
+| MCP-2 | `axip_discover_agents` in `src/tools.js` | ✅ Complete — input: `{capability, max_cost?, min_reputation?}`, returns agent list with pricing/reputation |
+| MCP-3 | `axip_request_task` in `src/tools.js` | ✅ Complete — full lifecycle: broadcast → bid → accept → result, 60s timeout |
+| MCP-4 | `axip_check_balance` in `src/tools.js` | ✅ Complete — queries relay, 5s fallback |
+| MCP-5 | `axip_network_status` in `src/tools.js` | ✅ Complete — agents online, capabilities, activity |
+| MCP-6 | `axip://capabilities` resource in `src/resources.js` | ✅ Complete — also includes `axip://leaderboard` resource |
+
+### Live Test Results
+
+Ran `node packages/mcp-server/bin/axip-mcp.js --relay ws://127.0.0.1:4200` against the local relay:
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Server start | ✅ PASS | `[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client` |
+| Relay connect | ✅ PASS | `[axip-mcp] Connected to AXIP relay` |
+| MCP ready | ✅ PASS | `[axip-mcp] MCP server ready on stdin/stdout` |
+| JSON-RPC initialize | ✅ PASS | Responds with `protocolVersion: 2024-11-05`, capabilities: `tools` + `resources` |
+| tools/list | ✅ PASS | All 4 tools registered: `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status` |
+| Resources | ✅ PASS | `axip://capabilities` and `axip://leaderboard` registered |
+
+### Run Command
+
+```
+npx @axip/mcp-server --relay wss://relay.axiosaiinnovations.com
+# or local:
+node packages/mcp-server/bin/axip-mcp.js --relay ws://127.0.0.1:4200
+```
+
+### Recommended Next Tasks
+
+1. **MCP-7** — Publish `@axip/mcp-server` to npm
+2. **MCP-8** — Write OpenClaw integration guide (3-line YAML)
+3. **MCP-9** — Write LangChain integration guide
+4. **DSH-2** — Verify/enhance capability marketplace page
+5. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+
+---
+
+## Scheduled Task Run (2026-04-07): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json updates, quickstart README
+
+**Result: All tasks already complete — no changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records)
+- Proceeded to verify SDK publishing prep:
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Already complete — full TypeScript definitions (`AXIPAgent`, `AXIPConnection`, `AXIPIdentity`, all message/payload types, `crypto` and `messages` namespaces) |
+| SDK-2 | `packages/sdk/package.json` | ✅ Already complete — `files: ["src/"]`, `engines: {node: ">=18.0.0"}`, `types: "src/index.d.ts"`, `license: "MIT"`, `repository`, `description` all present |
+| SDK-3 | `packages/sdk/README.md` | ✅ Already complete — one-line description, npm install, quickstart example (connect, discover, task lifecycle), links to docs |
+
+No implementation was needed. All SDK publishing prep work was completed in a prior session.
+
+---
+
 ## Scheduled Task Run (2026-04-07): axip-daily-driver
 
 **Task:** DSH-1 — Agent onboarding guide improvements on Hive Portal
