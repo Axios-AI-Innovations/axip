@@ -1,6 +1,39 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-07
+> Last updated: 2026-04-08
+
+---
+
+## Scheduled Task Run (2026-04-08): axip-daily-driver
+
+**Task:** DSH-2 — Capability marketplace page (search/filter)
+
+### What Was Implemented
+
+- **DSH-2** (1 commit `63b1234`): Enhanced capability marketplace on Hive Portal
+  - **Capability filter pills** — clickable chips built dynamically from live agent capabilities (e.g. `summarize`, `translate`, `data_extraction`). Clicking a pill filters agents; clicking again deselects. Pills show `.active` state with cyan highlight.
+  - **Result count** — "Showing X of Y agents matching [filter]" line appears below pills and updates reactively.
+  - **Tasks completed per card** — `fetchMarketplace()` now fetches leaderboard alongside status; each agent card shows `N tasks completed` as card metadata (when > 0).
+  - **Sort: Tasks Completed** — new sort option added alongside reputation/price/name.
+  - CSS: `.mp-cap-pills`, `.cap-pill`, `.cap-pill.active`, `.mp-result-count`, `.agent-card-meta`
+
+### Verification
+
+| Check | Status | Details |
+|-------|--------|---------|
+| hive-portal restart | ✅ PASS | uptime 2s, no errors in logs |
+| `/api/network/status` | ✅ PASS | relay_online=true, 7 online agents, caps present |
+| `/api/network/leaderboard` | ✅ PASS | agents with reputation + tasks_completed fields |
+| Git commit | ✅ PASS | `63b1234 DSH-2: Capability marketplace search/filter enhancements` |
+
+### Recommended Next Tasks (2026-04-09)
+
+1. **DSH-6** — OpenAPI docs for all relay endpoints (swagger/redoc)
+2. **MCP-7** — Publish `@axip/mcp-server` to npm (**MANUAL** — requires npm login)
+3. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+4. **DSH-3** — Reputation leaderboard tab enhancements
+5. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+6. **DNS** — Set up relay.axiosaiinnovations.com and portal.axiosaiinnovations.com (**MANUAL**)
 
 ---
 
