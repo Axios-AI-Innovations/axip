@@ -400,6 +400,26 @@
     }
     .marketplace-toggle input[type="checkbox"] { accent-color: #00bcd4; }
 
+    .mp-cap-pills {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+    }
+    .cap-pill {
+      padding: 5px 12px; border-radius: 20px; font-size: 0.78rem;
+      background: #111; border: 1px solid #333; color: #888;
+      cursor: pointer; user-select: none; transition: all 0.15s;
+    }
+    .cap-pill:hover { border-color: #00bcd4; color: #00bcd4; }
+    .cap-pill.active { background: #0d3d44; border-color: #00bcd4; color: #00bcd4; }
+
+    .mp-result-count {
+      font-size: 0.8rem; color: #555; margin-bottom: 16px;
+    }
+
+    .agent-card-meta {
+      font-size: 0.75rem; color: #555; margin-top: 4px;
+    }
+    .agent-card-meta span + span::before { content: ' · '; }
+
     .agent-card {
       background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
       padding: 16px; margin-bottom: 12px;
@@ -892,8 +912,9 @@
         <input type="text" class="marketplace-search" id="mp-search" placeholder="Search by agent name or capability...">
         <select class="marketplace-sort" id="mp-sort">
           <option value="reputation">Sort: Reputation</option>
-          <option value="price-low">Sort: Price (Low-High)</option>
-          <option value="price-high">Sort: Price (High-Low)</option>
+          <option value="tasks">Sort: Tasks Completed</option>
+          <option value="price-low">Sort: Price (Low→High)</option>
+          <option value="price-high">Sort: Price (High→Low)</option>
           <option value="name">Sort: Name</option>
         </select>
         <label class="marketplace-toggle">
@@ -902,6 +923,8 @@
         </label>
       </div>
 
+      <div id="mp-cap-pills" class="mp-cap-pills"></div>
+      <div id="mp-result-count" class="mp-result-count"></div>
       <div id="mp-agents-list">
         <p style="color:#555;text-align:center;">Loading...</p>
       </div>
@@ -1943,26 +1966,66 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
 
     // ─── PUBLIC: Marketplace ──────────────────────────
     let mpAgentsCache = [];
+    let mpTaskCounts = {};  // agent name → tasks_completed
+    let activeCapFilter = null;
 
     async function fetchMarketplace() {
       try {
-        const res = await fetch('/api/network/status');
-        const data = await res.json();
-        mpAgentsCache = data.agents || [];
+        const [statusRes, lbRes] = await Promise.all([
+          fetch('/api/network/status'),
+          fetch('/api/network/leaderboard')
+        ]);
+        const statusData = await statusRes.json();
+        const lbData = await lbRes.json();
+
+        mpAgentsCache = statusData.agents || [];
+
+        // Build tasks_completed lookup from leaderboard
+        mpTaskCounts = {};
+        for (const a of (lbData.agents || [])) {
+          mpTaskCounts[a.name] = a.tasks_completed || 0;
+        }
+
+        buildCapPills();
         renderMarketplace();
       } catch (err) {
         console.error('Failed to fetch marketplace:', err);
       }
     }
 
+    function buildCapPills() {
+      const container = document.getElementById('mp-cap-pills');
+      const allCaps = new Set();
+      for (const a of mpAgentsCache) {
+        for (const c of (a.capabilities || [])) allCaps.add(c);
+      }
+      const caps = [...allCaps].sort();
+      if (caps.length === 0) { container.innerHTML = ''; return; }
+
+      container.innerHTML = caps.map(c => {
+        const active = activeCapFilter === c ? ' active' : '';
+        return `<button class="cap-pill${active}" onclick="toggleCapFilter(${JSON.stringify(c)})">${esc(c)}</button>`;
+      }).join('');
+    }
+
+    function toggleCapFilter(cap) {
+      activeCapFilter = activeCapFilter === cap ? null : cap;
+      buildCapPills();
+      renderMarketplace();
+    }
+
     function renderMarketplace() {
       const container = document.getElementById('mp-agents-list');
+      const countEl = document.getElementById('mp-result-count');
       const query = (document.getElementById('mp-search').value || '').toLowerCase();
       const sortBy = document.getElementById('mp-sort').value;
       const showAll = document.getElementById('mp-show-all').checked;
 
       let agents = [...mpAgentsCache];
       if (!showAll) agents = agents.filter(a => a.status === 'online');
+      if (activeCapFilter) {
+        agents = agents.filter(a => (a.capabilities || []).includes(activeCapFilter));
+      }
       if (query) {
         agents = agents.filter(a => {
           const nameMatch = (a.name || '').toLowerCase().includes(query);
@@ -1973,6 +2036,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
 
       agents.sort((a, b) => {
         if (sortBy === 'reputation') return (b.reputation || 0) - (a.reputation || 0);
+        if (sortBy === 'tasks') return (mpTaskCounts[b.name] || 0) - (mpTaskCounts[a.name] || 0);
         if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '');
         if (sortBy === 'price-low' || sortBy === 'price-high') {
           const aMin = minPrice(a);
@@ -1981,6 +2045,16 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         }
         return 0;
       });
+
+      const total = mpAgentsCache.filter(a => showAll || a.status === 'online').length;
+      const filterDesc = [];
+      if (activeCapFilter) filterDesc.push(activeCapFilter);
+      if (query) filterDesc.push(`"${query}"`);
+      if (filterDesc.length > 0) {
+        countEl.textContent = `Showing ${agents.length} of ${total} agents matching ${filterDesc.join(' + ')}`;
+      } else {
+        countEl.textContent = agents.length > 0 ? `Showing ${agents.length} agent${agents.length !== 1 ? 's' : ''}` : '';
+      }
 
       if (agents.length === 0) {
         container.innerHTML = '<p style="color:#555;text-align:center;">No agents found.</p>';
@@ -1995,12 +2069,19 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
           return '<div class="price-line"><span class="amount">$' + price.toFixed(3) + '</span> / ' + esc(c) + '</div>';
         }).filter(Boolean).join('');
 
+        const tasksDone = mpTaskCounts[a.name] || 0;
+        const metaParts = [];
+        if (tasksDone > 0) metaParts.push(`${tasksDone} task${tasksDone !== 1 ? 's' : ''} completed`);
+        if (a.node_type) metaParts.push(a.node_type);
+        const meta = metaParts.length ? `<div class="agent-card-meta">${metaParts.map(p => `<span>${esc(p)}</span>`).join('')}</div>` : '';
+
         return `<div class="agent-card">
           <div class="agent-card-info">
             <h4>${esc(a.name)} ${statusBadge(a.status)}</h4>
             ${a.operator ? '<div class="operator">' + esc(a.operator) + '</div>' : ''}
             <div class="caps">${caps || '<span style="color:#555;">No capabilities</span>'}</div>
             <div>${repBar(a.reputation)}</div>
+            ${meta}
           </div>
           <div class="agent-card-pricing">
             ${pricing || '<div class="price-line" style="color:#555;">No pricing set</div>'}
