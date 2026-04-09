@@ -1,6 +1,44 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-08
+> Last updated: 2026-04-09
+
+---
+
+## Daily Driver Run (2026-04-09): DSH-6 — OpenAPI Docs
+
+**Task:** DSH-6 — Generate OpenAPI docs for all relay/portal endpoints
+
+### What Was Implemented
+
+- **GET `/api/openapi.json`** — Full OpenAPI 3.0.3 spec served as JSON from Hive Portal (port 4202).
+  Covers all 9 public endpoints across 4 tags (Network, Agents, Tasks, Meta/Demo) with full request/response schemas for 4 component types: `AgentSummary`, `CapabilityEntry`, `LeaderboardEntry`, `TaskSummary`.
+
+- **GET `/api-docs`** — Swagger UI page (dark-themed, loaded from jsDelivr CDN, no new npm deps).
+  Shows all endpoints with expandable details, request body schemas, and response schemas.
+  Includes a "Back to Hive Portal" link.
+
+- **"API Docs" nav tab** on the Hive Portal (`http://127.0.0.1:4202`).
+  Renders an inline endpoint directory grouped by tag (fetched from live spec).
+  Buttons to open Swagger UI (`/api-docs`) and download raw JSON (`/api/openapi.json`).
+
+### Verification
+
+| Check | Status | Details |
+|-------|--------|---------|
+| hive-portal restart | PASS | Clean startup, no errors in PM2 logs |
+| GET /api/openapi.json | PASS | Returns valid OpenAPI 3.0.3 JSON — 9 paths, 4 schemas |
+| GET /api-docs | PASS | HTTP 200 — Swagger UI HTML served |
+| GET /api/health | PASS | HTTP 200 — unaffected |
+| Git commit | PASS | `6c90739 DSH-6: OpenAPI docs for all Hive Portal endpoints` |
+
+### Recommended Next Tasks (2026-04-09)
+
+1. **DSH-3** — Reputation leaderboard enhancements (timeline chart, stats)
+2. **DSH-4** — Network stats timeline (tasks over time chart)
+3. **MCP-7** — Publish `@axip/mcp-server` to npm (**MANUAL** — requires npm login)
+4. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+5. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
 
 ---
 
