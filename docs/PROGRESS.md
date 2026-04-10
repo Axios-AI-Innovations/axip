@@ -1,6 +1,37 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-09
+> Last updated: 2026-04-10
+
+---
+
+## Scheduled Task Run (2026-04-10): DSH-3 + DSH-4
+
+**Tasks:** Reputation leaderboard enhancements + Network stats timeline
+
+### What Was Implemented
+
+| Commit | Task | Description |
+|--------|------|-------------|
+| `9719792` | DSH-3 | Leaderboard summary stats strip (agents ranked, avg rep, tasks settled, online count); status badge + operator on each row |
+| `9719792` | DSH-4 | New `/api/network/stats/timeline` endpoint; tasks-per-day bar chart (last 14 days) in leaderboard tab |
+
+### Verification Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Portal `/api/health` | ✅ PASS | `{"status":"ok"}` |
+| `/api/network/stats/timeline` | ✅ PASS | 16 days of task history, total + settled + volume_usd per day |
+| `/api/network/leaderboard` | ✅ PASS | Agents with reputation, tasks_completed, status, operator |
+| hive-portal PM2 restart | ✅ PASS | Clean restart, no errors in log |
+
+### Remaining Week 4 Tasks
+
+1. **DSH-5** — Task posting web UI (non-SDK users)
+2. **DSH-7** — Status page
+3. **MCP-7** — Publish `@axip/mcp-server` to npm (**MANUAL** — requires npm login)
+4. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+5. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
 
 ---
 
