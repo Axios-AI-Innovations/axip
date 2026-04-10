@@ -4,6 +4,109 @@
 
 ---
 
+## Evening Verification (2026-04-09): axip-test-verify
+
+**Task:** End-of-day smoke test — verify DSH-6 and all services
+
+### What Was Implemented Today
+
+| Commit | Task | Description |
+|--------|------|-------------|
+| `6c90739` | DSH-6 | OpenAPI docs for all Hive Portal endpoints — `/api/openapi.json`, `/api-docs` (Swagger UI), API Docs nav tab |
+
+### Verification Results
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Relay (port 4201) `/api/stats` | ✅ PASS | 8 agents online, 35 total; 16 settled tasks; $0.18 ledger |
+| Portal (port 4202) `/api/network/status` | ✅ PASS | `relay_online: true`, 8 agents, 9 capabilities |
+| Portal `/api/health` | ✅ PASS | HTTP 200 — `{"status":"ok"}` |
+| OpenAPI `/api/openapi.json` | ✅ PASS | OpenAPI 3.0.3 — 9 paths, 4 schemas |
+| Swagger UI `/api-docs` | ✅ PASS | HTTP 200 |
+| PM2 | ⚠️ N/A | PM2 not in current shell PATH — services confirmed alive via HTTP |
+
+**Online agents:** summarizer-alpha, translator-alpha, data-extract, code-review, mcp-client, sentinel-delta, router-gamma, scout-beta
+
+### Recommended Next Tasks (2026-04-10)
+
+1. **DSH-3** — Reputation leaderboard enhancements (timeline chart, stats)
+2. **DSH-4** — Network stats timeline (tasks-over-time chart)
+3. **MCP-7** — Publish `@axip/mcp-server` to npm (**MANUAL** — requires npm login)
+4. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+5. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+
+---
+
+## Scheduled Task Run (2026-04-09): axip-mcp-server-build (third run)
+
+**Task:** MCP-1 through MCP-6 — @axip/mcp-server package (verification run)
+
+**Result: All tasks already complete — package exists and verified working.**
+
+### What Was Checked
+
+The `packages/mcp-server/` package was fully implemented from prior sessions. All files confirmed present:
+
+| Task | File | Status |
+|------|------|--------|
+| MCP-1 | `packages/mcp-server/package.json` + `src/index.js` + `bin/axip-mcp.js` | ✅ Complete |
+| MCP-2 | `axip_discover_agents` in `src/tools.js` | ✅ Complete |
+| MCP-3 | `axip_request_task` in `src/tools.js` | ✅ Complete |
+| MCP-4 | `axip_check_balance` in `src/tools.js` | ✅ Complete |
+| MCP-5 | `axip_network_status` in `src/tools.js` | ✅ Complete |
+| MCP-6 | `axip://capabilities` + `axip://leaderboard` in `src/resources.js` | ✅ Complete |
+
+### Live Test Results (2026-04-09)
+
+Relay was already running on `ws://127.0.0.1:4200` (EADDRINUSE confirmed relay online).
+
+Ran `node packages/mcp-server/bin/axip-mcp.js --relay ws://127.0.0.1:4200`:
+
+| Check | Status | Details |
+|-------|--------|---------|
+| Module load | ✅ PASS | exports: `createAXIPMCPServer`, `registerResources`, `registerTools` |
+| Server start | ✅ PASS | `[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client` |
+| Relay connect | ✅ PASS | `[axip-mcp] Connected to AXIP relay` |
+| MCP ready | ✅ PASS | `[axip-mcp] MCP server ready on stdin/stdout` |
+| JSON-RPC initialize | ✅ PASS | `protocolVersion: 2024-11-05`, capabilities: `tools` + `resources` |
+
+### Recommended Next Tasks (2026-04-09)
+
+1. **MCP-7** — Publish `@axip/mcp-server` to npm (**MANUAL** — requires npm login)
+2. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+
+---
+
+## Scheduled Task Run (2026-04-09): axip-sdk-typescript (verification run)
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json updates, quickstart README
+
+**Result: All tasks already complete — no changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records)
+- Verified all SDK publishing prep files exist and are correct:
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Complete — full TypeScript definitions (527 lines), all types present |
+| SDK-2 | `packages/sdk/package.json` | ✅ Complete — `files`, `engines`, `types`, `license`, `repository`, `description` all present |
+| SDK-3 | `packages/sdk/README.md` | ✅ Complete — file exists |
+
+No implementation was needed. All SDK-1/SDK-2/SDK-3 work remains complete from prior sessions.
+
+### Recommended Next Tasks
+
+1. **SDK-4** — Add integration test suite (connect, discover, task lifecycle)
+2. **SDK-5** — Publish `@axip/sdk` to npm (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+
+---
+
 ## Daily Driver Run (2026-04-09): DSH-6 — OpenAPI Docs
 
 **Task:** DSH-6 — Generate OpenAPI docs for all relay/portal endpoints
