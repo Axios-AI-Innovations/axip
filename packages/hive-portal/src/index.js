@@ -238,6 +238,32 @@ app.get('/api/network/leaderboard', async (req, res) => {
   }
 });
 
+// ─── Network Stats Timeline (tasks per day) — DSH-3/DSH-4 ───────
+app.get('/api/network/stats/timeline', async (req, res) => {
+  try {
+    const tasks = await relayFetch('/api/tasks');
+    if (!tasks) return res.json({ days: [], updated_at: new Date().toISOString() });
+
+    const byDay = {};
+    for (const t of tasks) {
+      const day = (t.created_at || '').split(' ')[0];
+      if (!day || day.length < 10) continue;
+      if (!byDay[day]) byDay[day] = { day, total: 0, settled: 0, volume_usd: 0 };
+      byDay[day].total++;
+      if (t.state === 'SETTLED') {
+        byDay[day].settled++;
+        byDay[day].volume_usd = Math.round((byDay[day].volume_usd + (t.reward || 0)) * 1e6) / 1e6;
+      }
+    }
+
+    const days = Object.values(byDay).sort((a, b) => a.day.localeCompare(b.day));
+    res.json({ days, updated_at: new Date().toISOString() });
+  } catch (err) {
+    console.error(`[hive-portal] /api/network/stats/timeline error: ${err.message}`);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
 // ─── Network Health ──────────────────────────────────────────────
 app.get('/api/network/health', async (req, res) => {
   try {

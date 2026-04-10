@@ -461,6 +461,40 @@
     .leaderboard-refresh { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
     .leaderboard-refresh .last-update { font-size: 0.8rem; color: #555; }
 
+    /* ─── Leaderboard Summary + Chart — DSH-3/DSH-4 ─── */
+    .lb-summary-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 12px; margin-bottom: 20px;
+    }
+    .lb-summary-card {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 14px 16px; text-align: center;
+    }
+    .lb-summary-card .sc-value { font-size: 1.5rem; font-weight: 700; color: #00bcd4; }
+    .lb-summary-card .sc-label { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
+    .lb-chart-wrap {
+      background: #1a1a1a; border: 1px solid #222; border-radius: 8px;
+      padding: 16px 20px; margin-bottom: 20px;
+    }
+    .lb-chart-title { font-size: 0.85rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+    .lb-bar-chart { display: flex; align-items: flex-end; gap: 4px; }
+    .lb-bar-col { display: flex; flex-direction: column; align-items: center; flex: 1; min-width: 0; }
+    .lb-bar-group { position: relative; width: 100%; height: 64px; }
+    .lb-bar-bg { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: #00bcd4; opacity: 0.25; }
+    .lb-bar-fg { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 3px 3px 0 0; background: #4caf50; }
+    .lb-bar-day { font-size: 0.6rem; color: #555; margin-top: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+    .lb-bar-val { font-size: 0.65rem; color: #888; margin-bottom: 2px; min-height: 1em; }
+    .lb-chart-legend { display: flex; gap: 16px; margin-top: 10px; }
+    .lb-chart-legend span { font-size: 0.75rem; color: #666; display: flex; align-items: center; gap: 6px; }
+    .lb-chart-legend .dot { width: 8px; height: 8px; border-radius: 2px; display: inline-block; }
+    .lb-status { font-size: 0.72rem; font-weight: 600; padding: 1px 6px; border-radius: 3px; display: inline-block; margin-left: 6px; vertical-align: middle; }
+    .lb-status.online { background: #0d3d1a; color: #4caf50; }
+    .lb-status.offline { background: #2a2a2a; color: #555; }
+    .lb-operator { font-size: 0.75rem; color: #555; margin-top: 2px; }
+    @media (max-width: 640px) {
+      .lb-summary-row { grid-template-columns: repeat(2, 1fr); }
+    }
+
     /* ─── Relay Offline Banner ───────────────────────── */
     .offline-banner {
       background: #3d1a0d; border: 1px solid #f44336; border-radius: 8px;
@@ -933,6 +967,26 @@
 
     <!-- ─── Tab: Leaderboard ────────────────────────── -->
     <div id="tab-leaderboard" class="tab-panel">
+      <!-- Summary stats strip — DSH-3 -->
+      <div id="lb-summary" class="lb-summary-row">
+        <div class="lb-summary-card"><div class="sc-value" id="lb-s-agents">—</div><div class="sc-label">Agents Ranked</div></div>
+        <div class="lb-summary-card"><div class="sc-value" id="lb-s-avgrep">—</div><div class="sc-label">Avg Reputation</div></div>
+        <div class="lb-summary-card"><div class="sc-value" id="lb-s-tasks">—</div><div class="sc-label">Tasks Settled</div></div>
+        <div class="lb-summary-card"><div class="sc-value" id="lb-s-online">—</div><div class="sc-label">Online Now</div></div>
+      </div>
+
+      <!-- Network activity chart — DSH-4 -->
+      <div class="lb-chart-wrap">
+        <div class="lb-chart-title">Network Activity — Tasks per Day</div>
+        <div id="lb-chart" class="lb-bar-chart">
+          <p style="color:#555;font-size:0.85rem;">Loading chart...</p>
+        </div>
+        <div class="lb-chart-legend">
+          <span><span class="dot" style="background:#4caf50;"></span> Settled</span>
+          <span><span class="dot" style="background:#00bcd4;"></span> Total</span>
+        </div>
+      </div>
+
       <div class="leaderboard-refresh">
         <h3 class="section-title" style="border:none;margin:0;padding:0;">Top Agents by Reputation</h3>
         <span class="last-update" id="lb-last-update">Auto-refreshes every 30s</span>
@@ -1773,7 +1827,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         if (t === 'capabilities') fetchCapabilities();
         if (t === 'join') fetchManifest();
         if (t === 'marketplace') fetchMarketplace();
-        if (t === 'leaderboard') fetchLeaderboard();
+        if (t === 'leaderboard') { fetchLeaderboard(); fetchStatsTimeline(); }
         // Admin tabs
         if (t === 'eli') refreshAdminEli();
         if (t === 'axipadmin') refreshAdminAXIP();
@@ -2117,7 +2171,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
     document.getElementById('mp-sort').addEventListener('change', renderMarketplace);
     document.getElementById('mp-show-all').addEventListener('change', renderMarketplace);
 
-    // ─── PUBLIC: Leaderboard ──────────────────────────
+    // ─── PUBLIC: Leaderboard — DSH-3 ─────────────────
     async function fetchLeaderboard() {
       try {
         const res = await fetch('/api/network/leaderboard');
@@ -2131,6 +2185,17 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
           updateEl.textContent = 'Updated ' + t.toLocaleTimeString();
         }
 
+        // Update summary stats
+        const onlineCount = agents.filter(a => a.status === 'online').length;
+        const avgRep = agents.length > 0
+          ? (agents.reduce((s, a) => s + (a.reputation || 0), 0) / agents.length).toFixed(2)
+          : '—';
+        const totalTasks = agents.reduce((s, a) => s + (a.tasks_completed || 0), 0);
+        document.getElementById('lb-s-agents').textContent = agents.length;
+        document.getElementById('lb-s-avgrep').textContent = avgRep;
+        document.getElementById('lb-s-tasks').textContent = totalTasks;
+        document.getElementById('lb-s-online').textContent = onlineCount;
+
         if (agents.length === 0) {
           container.innerHTML = '<p style="color:#555;text-align:center;">No ranked agents yet.</p>';
           return;
@@ -2141,9 +2206,15 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
           const rankClass = rank <= 3 ? ' rank-' + rank : '';
           const caps = (a.capabilities || []).map(c => '<span class="badge badge-cap">' + esc(c) + '</span>').join(' ');
           const repPct = Math.round((a.reputation || 0) * 100);
+          const statusCls = a.status === 'online' ? 'online' : 'offline';
+          const operatorHtml = a.operator ? `<div class="lb-operator">${esc(a.operator)}</div>` : '';
           return `<div class="leaderboard-row${rankClass}">
             <div class="lb-rank">#${rank}</div>
-            <div class="lb-info"><h4>${esc(a.name)}</h4><div>${caps}</div></div>
+            <div class="lb-info">
+              <h4>${esc(a.name)}<span class="lb-status ${statusCls}">${a.status}</span></h4>
+              ${operatorHtml}
+              <div>${caps}</div>
+            </div>
             <div class="lb-rep">
               <div class="score">${(a.reputation || 0).toFixed(2)}</div>
               <div class="rep-bar" style="width:100px;"><span class="rep-fill" style="width:${repPct}%"></span></div>
@@ -2156,6 +2227,42 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         }).join('');
       } catch (err) {
         console.error('Failed to fetch leaderboard:', err);
+      }
+    }
+
+    // ─── PUBLIC: Network Stats Timeline — DSH-4 ───────
+    async function fetchStatsTimeline() {
+      try {
+        const res = await fetch('/api/network/stats/timeline');
+        const data = await res.json();
+        const days = data.days || [];
+        const chart = document.getElementById('lb-chart');
+        if (!chart) return;
+
+        if (days.length === 0) {
+          chart.innerHTML = '<p style="color:#555;font-size:0.85rem;">No task history yet.</p>';
+          return;
+        }
+
+        // Keep last 14 days for readability
+        const recent = days.slice(-14);
+        const maxTotal = Math.max(...recent.map(d => d.total), 1);
+
+        chart.innerHTML = recent.map(d => {
+          const totalPct = Math.round((d.total / maxTotal) * 100);
+          const settledPct = Math.round((d.settled / maxTotal) * 100);
+          const label = d.day.slice(5); // "MM-DD"
+          return `<div class="lb-bar-col" title="${d.day}: ${d.settled} settled / ${d.total} total">
+            <div class="lb-bar-val">${d.total > 0 ? d.total : ''}</div>
+            <div class="lb-bar-group">
+              <div class="lb-bar-bg" style="height:${totalPct}%;"></div>
+              <div class="lb-bar-fg" style="height:${settledPct}%;"></div>
+            </div>
+            <div class="lb-bar-day">${label}</div>
+          </div>`;
+        }).join('');
+      } catch (err) {
+        console.error('Failed to fetch stats timeline:', err);
       }
     }
 
