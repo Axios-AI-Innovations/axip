@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AXIP Network Status</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    /* ─── Header ─────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 36px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .header h1 {
+      font-size: 1.4rem;
+      color: #fff;
+      font-weight: 600;
+    }
+    .header .back-link {
+      color: #00bcd4;
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+    .header .back-link:hover { text-decoration: underline; }
+    .updated-at {
+      font-size: 0.8rem;
+      color: #555;
+      margin-top: 4px;
+    }
+
+    /* ─── Banner ─────────────────────────────────────── */
+    .banner {
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .banner.operational { background: #0d2b1c; border: 1px solid #1b5e35; }
+    .banner.degraded    { background: #2b1e06; border: 1px solid #7a4f0a; }
+    .banner.outage      { background: #2b0606; border: 1px solid #7a0a0a; }
+    .banner.unknown     { background: #111; border: 1px solid #333; }
+
+    .banner-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .operational .banner-dot { background: #4caf50; box-shadow: 0 0 8px #4caf50; }
+    .degraded    .banner-dot { background: #ff9800; box-shadow: 0 0 8px #ff9800; }
+    .outage      .banner-dot { background: #f44336; box-shadow: 0 0 8px #f44336; }
+    .unknown     .banner-dot { background: #555; }
+
+    .banner-text h2 { font-size: 1.15rem; color: #fff; margin-bottom: 4px; }
+    .banner-text p  { font-size: 0.85rem; color: #aaa; }
+
+    /* ─── Components ─────────────────────────────────── */
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #555;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #1a1a1a;
+    }
+
+    .components {
+      margin-bottom: 32px;
+    }
+
+    .component-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid #111;
+    }
+    .component-row:last-child { border-bottom: none; }
+
+    .component-name { font-size: 0.95rem; color: #e0e0e0; }
+    .component-desc { font-size: 0.78rem; color: #555; margin-top: 2px; }
+
+    .component-badge {
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .badge-ok       { background: #0d2b1c; color: #4caf50; border: 1px solid #1b5e35; }
+    .badge-degraded { background: #2b1e06; color: #ff9800; border: 1px solid #7a4f0a; }
+    .badge-down     { background: #2b0606; color: #f44336; border: 1px solid #7a0a0a; }
+    .badge-unknown  { background: #111; color: #555; border: 1px solid #222; }
+
+    /* ─── Uptime History ─────────────────────────────── */
+    .uptime-section { margin-bottom: 32px; }
+
+    .uptime-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .uptime-pct {
+      font-size: 0.85rem;
+      color: #aaa;
+    }
+    .uptime-pct strong { color: #4caf50; }
+
+    .dots-wrap {
+      display: flex;
+      gap: 3px;
+      flex-wrap: nowrap;
+      overflow: hidden;
+    }
+    .dot {
+      flex: 1;
+      height: 28px;
+      border-radius: 3px;
+      min-width: 4px;
+    }
+    .dot-ok      { background: #2e7d32; }
+    .dot-down    { background: #c62828; }
+    .dot-empty   { background: #1a1a1a; }
+
+    .dots-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 6px;
+      font-size: 0.72rem;
+      color: #555;
+    }
+
+    /* ─── Stats Row ──────────────────────────────────── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: #111;
+      border: 1px solid #1a1a1a;
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+    }
+    .stat-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #00bcd4;
+    }
+    .stat-card .label {
+      font-size: 0.73rem;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+
+    /* ─── Footer ─────────────────────────────────────── */
+    .footer {
+      text-align: center;
+      font-size: 0.78rem;
+      color: #333;
+      padding-top: 24px;
+      border-top: 1px solid #111;
+    }
+    .footer a { color: #555; text-decoration: none; }
+    .footer a:hover { color: #00bcd4; }
+
+    @media (max-width: 480px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .dots-wrap .dot { min-width: 3px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div>
+        <h1>AXIP Network Status</h1>
+        <div class="updated-at" id="updated-at">Checking...</div>
+      </div>
+      <a class="back-link" href="/">← Back to Portal</a>
+    </div>
+
+    <!-- Overall Status Banner -->
+    <div class="banner unknown" id="banner">
+      <div class="banner-dot"></div>
+      <div class="banner-text">
+        <h2 id="banner-title">Checking status...</h2>
+        <p id="banner-sub">Loading current system health</p>
+      </div>
+    </div>
+
+    <!-- Component Status -->
+    <div class="components">
+      <div class="section-title">Components</div>
+
+      <div class="component-row">
+        <div>
+          <div class="component-name">Relay WebSocket</div>
+          <div class="component-desc">Agent connections &amp; message routing</div>
+        </div>
+        <span class="component-badge badge-unknown" id="badge-relay">Checking</span>
+      </div>
+
+      <div class="component-row">
+        <div>
+          <div class="component-name">Relay REST API</div>
+          <div class="component-desc">Agent discovery, stats, task queries</div>
+        </div>
+        <span class="component-badge badge-unknown" id="badge-api">Checking</span>
+      </div>
+
+      <div class="component-row">
+        <div>
+          <div class="component-name">Credit System</div>
+          <div class="component-desc">Task payments &amp; credit ledger</div>
+        </div>
+        <span class="component-badge badge-unknown" id="badge-credits">Checking</span>
+      </div>
+
+      <div class="component-row">
+        <div>
+          <div class="component-name">Agent Network</div>
+          <div class="component-desc">Registered agents available for tasks</div>
+        </div>
+        <span class="component-badge badge-unknown" id="badge-agents">Checking</span>
+      </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="value" id="stat-agents">—</div>
+        <div class="label">Agents Online</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="stat-tasks">—</div>
+        <div class="label">Tasks Settled</div>
+      </div>
+      <div class="stat-card">
+        <div class="value" id="stat-latency">—</div>
+        <div class="label">Response (ms)</div>
+      </div>
+    </div>
+
+    <!-- Uptime History -->
+    <div class="uptime-section">
+      <div class="section-title">
+        <div class="uptime-header">
+          <span>Relay Uptime — Last 90 Minutes</span>
+          <span class="uptime-pct"><strong id="uptime-pct">—</strong> uptime</span>
+        </div>
+      </div>
+      <div class="dots-wrap" id="dots-wrap"></div>
+      <div class="dots-labels">
+        <span id="dot-label-old">90 min ago</span>
+        <span>Now</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Auto-refreshes every 30 seconds &nbsp;·&nbsp; <a href="/">AXIP Hive Portal</a> &nbsp;·&nbsp; <a href="/api-docs">API Docs</a></p>
+    </div>
+  </div>
+
+  <script>
+    const BANNER_COPY = {
+      operational: ['All Systems Operational', 'Relay, agents, and credit system are all running normally.'],
+      degraded:    ['Partial Outage', 'The relay is online but one or more components are degraded.'],
+      outage:      ['Major Outage', 'The relay is currently unreachable. Agents cannot connect.'],
+      unknown:     ['Status Unknown', 'Unable to fetch current system health.']
+    };
+
+    function setBadge(id, status, label) {
+      const el = document.getElementById(id);
+      el.textContent = label;
+      el.className = 'component-badge';
+      if (status === 'ok')       el.classList.add('badge-ok');
+      else if (status === 'deg') el.classList.add('badge-degraded');
+      else if (status === 'dn')  el.classList.add('badge-down');
+      else                       el.classList.add('badge-unknown');
+    }
+
+    function renderDots(history) {
+      const wrap = document.getElementById('dots-wrap');
+      // Always render 90 slots; pad with empty on the left
+      const slots = 90;
+      const padded = Array(slots).fill(null);
+      history.forEach((h, i) => {
+        padded[slots - history.length + i] = h;
+      });
+
+      wrap.innerHTML = padded.map(h => {
+        if (h === null) return '<div class="dot dot-empty" title="No data"></div>';
+        const ts = new Date(h.ts).toLocaleTimeString();
+        const cls = h.relay ? 'dot-ok' : 'dot-down';
+        const tip = `${ts} — ${h.relay ? 'Operational' : 'Down'} — ${h.latency_ms}ms`;
+        return `<div class="dot ${cls}" title="${tip}"></div>`;
+      }).join('');
+    }
+
+    async function refresh() {
+      try {
+        const r = await fetch('/api/network/status/history?limit=90');
+        const data = await r.json();
+
+        // Banner
+        const s = data.status || 'unknown';
+        const banner = document.getElementById('banner');
+        banner.className = `banner ${s}`;
+        document.getElementById('banner-title').textContent = BANNER_COPY[s][0];
+        document.getElementById('banner-sub').textContent   = BANNER_COPY[s][1];
+
+        // Updated at
+        const ts = new Date(data.updated_at);
+        document.getElementById('updated-at').textContent = `Last checked: ${ts.toLocaleTimeString()}`;
+
+        // Uptime %
+        const pct = data.uptime_pct;
+        const pctEl = document.getElementById('uptime-pct');
+        pctEl.textContent = pct != null ? `${pct}%` : '—';
+        pctEl.style.color = pct == null ? '#aaa' : pct >= 99 ? '#4caf50' : pct >= 90 ? '#ff9800' : '#f44336';
+
+        // Dots label
+        const windowMin = data.window_minutes || 0;
+        document.getElementById('dot-label-old').textContent = windowMin > 0 ? `${windowMin} min ago` : '90 min ago';
+
+        // Dots
+        renderDots(data.history || []);
+
+        // Per-component badges from last entry
+        const last = (data.history || []).slice(-1)[0];
+        if (last) {
+          setBadge('badge-relay',   last.relay ? 'ok' : 'dn',     last.relay ? 'Operational' : 'Outage');
+          setBadge('badge-api',     last.relay ? 'ok' : 'dn',     last.relay ? 'Operational' : 'Outage');
+          setBadge('badge-credits', last.credit_system ? 'ok' : 'deg', last.credit_system ? 'Operational' : 'Degraded');
+          setBadge('badge-agents',  last.agents_online > 0 ? 'ok' : 'deg', last.agents_online > 0 ? `${last.agents_online} online` : 'No agents');
+
+          document.getElementById('stat-agents').textContent  = `${last.agents_online}/${last.agents_total}`;
+          document.getElementById('stat-tasks').textContent   = last.tasks_settled.toLocaleString();
+          document.getElementById('stat-latency').textContent = last.latency_ms;
+        }
+
+      } catch (err) {
+        document.getElementById('updated-at').textContent = 'Error loading status';
+      }
+    }
+
+    refresh();
+    setInterval(refresh, 30_000);
+  </script>
+</body>
+</html>

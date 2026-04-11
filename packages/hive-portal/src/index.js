@@ -947,6 +947,87 @@ function adminOnly(req, res, next) {
   next();
 }
 
+// ─── DSH-7: Health History Buffer ───────────────────────────────
+// Track health checks every 60 seconds, keep last 90 (= 90 minutes)
+const HEALTH_HISTORY_MAX = 90;
+const healthHistory = [];
+
+async function runHealthCheck() {
+  const start = Date.now();
+  let relayUp = false;
+  let agentsOnline = 0;
+  let agentsTotal = 0;
+  let creditUp = false;
+  let tasksSettled = 0;
+
+  try {
+    const [stats, agents, creditsRes] = await Promise.all([
+      relayFetch('/api/stats').catch(() => null),
+      relayFetch('/api/agents').catch(() => null),
+      relayFetch('/api/credits/platform').catch(() => null)
+    ]);
+    relayUp = stats !== null;
+    agentsOnline = agents ? agents.filter(a => a.status === 'online').length : 0;
+    agentsTotal = agents ? agents.length : 0;
+    creditUp = creditsRes !== null && creditsRes?.error === undefined;
+    tasksSettled = stats?.tasks?.settled || 0;
+  } catch {}
+
+  const latencyMs = Date.now() - start;
+  const entry = {
+    ts: new Date().toISOString(),
+    relay: relayUp,
+    credit_system: creditUp,
+    agents_online: agentsOnline,
+    agents_total: agentsTotal,
+    tasks_settled: tasksSettled,
+    latency_ms: latencyMs
+  };
+
+  healthHistory.push(entry);
+  if (healthHistory.length > HEALTH_HISTORY_MAX) {
+    healthHistory.shift();
+  }
+}
+
+// Run initial check then every 60 seconds
+runHealthCheck();
+setInterval(runHealthCheck, 60_000);
+
+// ─── DSH-7: Status History Endpoint ─────────────────────────────
+app.get('/api/network/status/history', (req, res) => {
+  const limit = Math.min(parseInt(req.query.limit) || 90, 90);
+  const recent = healthHistory.slice(-limit);
+
+  // Compute uptime % over the window
+  const total = recent.length;
+  const up = recent.filter(h => h.relay).length;
+  const uptimePct = total > 0 ? Math.round((up / total) * 1000) / 10 : null;
+
+  // Current status derived from last entry
+  const last = recent[recent.length - 1] || null;
+  let overallStatus = 'unknown';
+  if (last) {
+    if (last.relay && last.credit_system) overallStatus = 'operational';
+    else if (last.relay) overallStatus = 'degraded';
+    else overallStatus = 'outage';
+  }
+
+  res.json({
+    status: overallStatus,
+    uptime_pct: uptimePct,
+    window_minutes: total,
+    history: recent,
+    updated_at: new Date().toISOString()
+  });
+});
+
+// ─── DSH-7: Status Page (standalone HTML) ───────────────────────
+app.get('/status', (req, res) => {
+  const statusHTML = readFileSync(join(__dirname, 'pages', 'status.html'), 'utf-8');
+  res.type('html').send(statusHTML);
+});
+
 // ─── Admin Proxy Routes (relay pass-through) ────────────────────
 app.get('/api/admin/*', adminOnly, async (req, res) => {
   try {

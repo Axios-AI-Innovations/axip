@@ -846,6 +846,7 @@
     <button data-tab="join">Join the Hive</button>
     <button data-tab="tryit">Try It</button>
     <button data-tab="apidocs">API Docs</button>
+    <a href="/status" target="_blank" style="color:#555;font-size:0.85rem;padding:12px 16px;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;" id="nav-status-link"><span id="nav-status-dot" style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;"></span>Status</a>
     <!--ADMIN_START-->
     <div class="nav-separator"></div>
     <button data-tab="eli">Eli Operations</button>
@@ -1952,6 +1953,18 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         document.getElementById('ov-relay-status').innerHTML = health.relay_online
           ? '<span style="color:#4caf50;">Operational</span>'
           : '<span style="color:#f44336;">Down</span>';
+
+        // Nav status dot
+        const navDot = document.getElementById('nav-status-dot');
+        if (navDot) {
+          if (health.relay_online && health.credit_system) {
+            navDot.style.background = '#4caf50';
+          } else if (health.relay_online) {
+            navDot.style.background = '#ff9800';
+          } else {
+            navDot.style.background = '#f44336';
+          }
+        }
 
         // Tasks table
         const tasksTbody = document.getElementById('ov-tasks-body');

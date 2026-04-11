@@ -1,6 +1,50 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-10
+> Last updated: 2026-04-11
+
+---
+
+## Scheduled Task Run (2026-04-11): axip-daily-driver
+
+**Task:** DSH-7 — Status page (uptime monitoring)
+
+### What Was Implemented
+
+| Task | File | Description |
+|------|------|-------------|
+| DSH-7 | `packages/hive-portal/src/index.js` | In-memory health history buffer (90 checks × 60s = 90 min window); `runHealthCheck()` polls relay every 60s and stores `{ ts, relay, credit_system, agents_online, latency_ms }` entries |
+| DSH-7 | `packages/hive-portal/src/index.js` | `GET /api/network/status/history` — returns history array, computed uptime %, overall status (operational/degraded/outage) |
+| DSH-7 | `packages/hive-portal/src/index.js` | `GET /status` — serves standalone status.html |
+| DSH-7 | `packages/hive-portal/src/pages/status.html` | Standalone dark-theme status page: overall banner (green/orange/red), per-component badges (Relay WS, REST API, Credit System, Agent Network), 90-dot uptime history, stats row, auto-refreshes every 30s |
+| DSH-7 | `packages/hive-portal/src/pages/index.html` | Added "Status" link in portal nav (opens `/status` in new tab); nav dot turns green/orange/red based on health fetched in `fetchOverview()` |
+
+### Verification
+
+| Check | Status | Details |
+|-------|--------|---------|
+| PM2 restart | ✅ PASS | hive-portal restarted cleanly, no errors |
+| `GET /api/network/status/history` | ✅ PASS | Returns `status: degraded` (credit system 503 expected), `window_minutes: 1`, `history_len: 1` |
+| `GET /status` | ✅ PASS | HTTP 200 — standalone status page served |
+| Error log | ✅ PASS | Only expected 503 for `/api/credits/platform` (Stripe not yet configured) |
+
+**Note:** Status shows "degraded" because the credit system (`/api/credits/platform`) returns 503 — this is expected until PAY-2/3/4 (Stripe integration) is done.
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT (8 days without status delivery); update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+
+### Recommended Next Tasks (2026-04-12)
+
+1. **DSH-5** — Already implemented as "Try It" tab in initial commit; mark done
+2. **INT-1** — OpenClaw skill for AXIP (Week 4 integration task)
+3. **INT-6** — Submit OpenClaw skill to Skills Registry
+4. **AGT-1** — Upgrade Agent Beta (web_search) for production
+5. **PAY-1** — Credit ledger schema in PostgreSQL (first step toward payments)
 
 ---
 
