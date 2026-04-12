@@ -1,18 +1,16 @@
 /**
- * Agent Beta (Scout) — Live Web Search & Summarization Agent
+ * Agent Translate (translator-alpha) — Multilingual Translation Agent
  *
- * A utility agent that provides web_search and summarize capabilities
- * via real DuckDuckGo search and local LLM inference (qwen3:8b).
+ * Provides translate capability via local Ollama (qwen3:14b).
+ * Accepts text + target language and returns translated text with
+ * source language detection.
  *
- * Boot sequence (mirrors Eli's pattern):
+ * Boot sequence:
  *   1. Load environment variables
  *   2. Initialize SQLite database
- *   3. Health check Ollama (verify qwen3:8b is available)
+ *   3. Health check Ollama (verify qwen3:14b is available)
  *   4. Create AXIPAgent and wire event handlers
  *   5. Connect to relay
- *
- * Commands come from Eli via AXIP delegation — no Telegram, no gateway.
- * PM2 handles restart on crash.
  */
 
 import 'dotenv/config';
@@ -23,8 +21,7 @@ import { AXIPAgent } from '@axip/sdk';
 import chalk from 'chalk';
 import { initDatabase, closeDatabase } from './db.js';
 import { healthCheck } from './llm/ollama.js';
-import { webSearch } from './skills/webSearch.js';
-import { summarize } from './skills/summarize.js';
+import { translate } from './skills/translate.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -34,23 +31,22 @@ const config = JSON.parse(readFileSync(join(PROJECT_ROOT, 'config', 'default.jso
 const axipConfig = config.axip || {};
 const biddingConfig = axipConfig.bidding || {};
 
-const PREFIX = chalk.blue('[BETA]');
+const PREFIX = chalk.cyan('[TRANSLATE]');
 
-// Module-level agent reference for shutdown access
 let agent = null;
 const activeTasks = new Map();
 
 const BANNER = `
 ╔══════════════════════════════════════╗
-║        🔍  AGENT BETA (SCOUT)  🔍   ║
-║    Live Web Search + LLM v${config.instance?.version || '0.2.0'}     ║
+║   🌐  AGENT TRANSLATE  🌐            ║
+║    Multilingual Translation v${config.instance?.version || '0.1.0'}  ║
 ╚══════════════════════════════════════╝
 `;
 
 async function main() {
   console.log(BANNER);
   console.log(`${PREFIX} Starting at ${new Date().toISOString()}`);
-  console.log(`${PREFIX} Instance: ${config.instance?.id || 'scout-beta'}`);
+  console.log(`${PREFIX} Instance: ${config.instance?.id || 'translator-alpha'}`);
   console.log(`${PREFIX} Node.js: ${process.version}`);
   console.log(`${PREFIX} PID: ${process.pid}`);
   console.log('');
@@ -64,12 +60,12 @@ async function main() {
   }
 
   // ─── 2. Ollama Health Check ─────────────────────────────────────
-  const model = config.models?.ollama?.primary || 'qwen3:8b';
+  const model = config.models?.ollama?.primary || 'qwen3:14b';
   try {
     const health = await healthCheck(model);
     if (!health.running) {
       console.error(`${PREFIX} WARNING: Ollama is not running at ${process.env.OLLAMA_HOST || 'http://127.0.0.1:11434'}`);
-      console.error(`${PREFIX} LLM summarization will fail. Start Ollama and restart Beta.`);
+      console.error(`${PREFIX} Translation will fail. Start Ollama and restart.`);
     } else if (!health.model_available) {
       console.error(`${PREFIX} WARNING: Model ${model} not found in Ollama.`);
       console.error(`${PREFIX} Available models: ${health.models.join(', ') || 'none'}`);
@@ -83,8 +79,8 @@ async function main() {
 
   // ─── 3. Create AXIP Agent ───────────────────────────────────────
   agent = new AXIPAgent({
-    name: axipConfig.agent_name || 'scout-beta',
-    capabilities: axipConfig.capabilities || ['web_search', 'summarize'],
+    name: axipConfig.agent_name || 'translator-alpha',
+    capabilities: axipConfig.capabilities || ['translate'],
     relayUrl: process.env.AXIP_RELAY_URL || axipConfig.relay_url || 'ws://127.0.0.1:4200',
     pricing: axipConfig.pricing || {},
     metadata: axipConfig.metadata || {}
@@ -100,6 +96,7 @@ async function main() {
   console.log(`${PREFIX} Agent ID: ${agent.identity.agentId}`);
   console.log(`${PREFIX} ${chalk.gray('Capabilities:')} ${(axipConfig.capabilities || []).join(', ')}`);
   console.log(`${PREFIX} ${chalk.gray('Model:')} ${model} (local Ollama)`);
+  console.log(`${PREFIX} ${chalk.gray('Pricing:')} $${axipConfig.pricing?.translate?.base_usd || 0.02} per translation`);
   console.log('');
   console.log(`${PREFIX} ${chalk.green('✓')} All systems initialized. Waiting for tasks...`);
   console.log('');
@@ -108,13 +105,11 @@ async function main() {
 // ─── Event Handlers ───────────────────────────────────────────────
 
 function _wireEventHandlers() {
-  // ── task_request: auto-bid on web_search and summarize tasks ────
   agent.on('task_request', async (msg) => {
     const taskId = msg.payload.task_id;
     const capability = msg.payload.capability_required;
 
-    // Only bid on capabilities we support
-    const supported = axipConfig.capabilities || ['web_search', 'summarize'];
+    const supported = axipConfig.capabilities || ['translate'];
     if (!supported.includes(capability)) {
       console.log(`${PREFIX} Ignoring task for capability: ${capability}`);
       return;
@@ -125,39 +120,42 @@ function _wireEventHandlers() {
       return;
     }
 
-    if (activeTasks.size >= (biddingConfig.max_concurrent_tasks || 5)) {
+    if (activeTasks.size >= (biddingConfig.max_concurrent_tasks || 3)) {
       console.log(`${PREFIX} At max concurrent tasks (${activeTasks.size}). Skipping ${taskId}`);
       return;
     }
 
-    console.log(`${PREFIX} ${chalk.bold('◄')} Task received: ${capability} — "${msg.payload.description}"`);
+    const input = msg.payload.input || {};
+    const toLang = input.to || 'unknown';
+    const fromLang = input.from || 'auto';
+    const textLength = (input.text || msg.payload.description || '').length;
 
-    // Price from config
+    console.log(`${PREFIX} ${chalk.bold('◄')} Task received: ${capability} → ${toLang} (${textLength} chars)`);
+
     const pricing = axipConfig.pricing?.[capability] || {};
-    const price = pricing.base_usd || (capability === 'web_search' ? 0.03 : 0.02);
-    const model = config.models?.ollama?.primary || 'qwen3:8b';
+    const price = pricing.base_usd || 0.02;
+    const model = config.models?.ollama?.primary || 'qwen3:14b';
 
     const bidMsg = agent.sendBid(msg.from.agent_id, taskId, {
       price,
-      etaSeconds: biddingConfig.default_eta_seconds || 15,
-      confidence: biddingConfig.default_confidence || 0.90,
+      etaSeconds: biddingConfig.default_eta_seconds || 20,
+      confidence: biddingConfig.default_confidence || 0.92,
       model,
-      message: `Live ${capability} via DDG + ${model}.`
+      message: `Translation to ${toLang} via ${model}. Returns translated text + detected source language.`
     });
 
     activeTasks.set(taskId, {
       capability,
+      payload: input,
       description: msg.payload.description,
-      constraints: msg.payload.constraints || {},
       requesterId: msg.from.agent_id,
       bidId: bidMsg.payload.bid_id,
       startTime: Date.now()
     });
 
-    console.log(`${PREFIX} ${chalk.bold('►')} Bid sent: $${price}, ETA ${biddingConfig.default_eta_seconds || 15}s`);
+    console.log(`${PREFIX} ${chalk.bold('►')} Bid sent: $${price}, ETA ${biddingConfig.default_eta_seconds || 20}s`);
   });
 
-  // ── task_accept: execute real skills ────────────────────────────
   agent.on('task_accept', async (msg) => {
     const taskId = msg.payload.task_id;
     const taskInfo = activeTasks.get(taskId);
@@ -169,47 +167,29 @@ function _wireEventHandlers() {
 
     console.log(`${PREFIX} ${chalk.green('✓')} Task accepted! Working on ${taskId.slice(0, 16)}...`);
 
-    const TASK_TIMEOUT_MS = 60000; // 60s hard limit per task
-
     try {
-      let output;
       const startTime = Date.now();
 
-      const taskWork = async () => {
-        if (taskInfo.capability === 'web_search') {
-          console.log(`${PREFIX} ${chalk.gray('…')} Searching: "${taskInfo.description}"`);
-          const result = await webSearch(taskInfo.description);
-          console.log(`${PREFIX} ${chalk.gray('…')} Found ${result.results.length} results${result.cached ? ' (cached)' : ''}`);
-          return result;
+      // Extract input — support both structured input and plain description
+      let text = taskInfo.payload.text || taskInfo.description || '';
+      const to = taskInfo.payload.to || 'English';
+      const from = taskInfo.payload.from || 'auto';
 
-        } else if (taskInfo.capability === 'summarize') {
-          const hasUrl = taskInfo.constraints?.url || /^https?:\/\//i.test(taskInfo.description.trim());
-          console.log(`${PREFIX} ${chalk.gray('…')} Summarizing${hasUrl ? ' URL' : ' text'} (${taskInfo.description.length} chars)`);
-          const result = await summarize(taskInfo.description, taskInfo.constraints);
-          console.log(`${PREFIX} ${chalk.gray('…')} Summary: ${result.summary_length} words from ${result.original_length}${result.source_url ? ` [${result.source_url.slice(0, 50)}]` : ''}`);
-          return result;
+      console.log(`${PREFIX} ${chalk.gray('…')} Translating ${text.length} chars → ${to}${from !== 'auto' ? ` (from ${from})` : ''}`);
 
-        } else {
-          return { error: `Unknown capability: ${taskInfo.capability}` };
-        }
-      };
-
-      // Race task execution against hard timeout
-      output = await Promise.race([
-        taskWork(),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error(`Task timeout after ${TASK_TIMEOUT_MS / 1000}s`)), TASK_TIMEOUT_MS)
-        )
-      ]);
-
+      const output = await translate({ text, to, from });
       const actualTime = Math.round((Date.now() - startTime) / 1000);
-      const model = config.models?.ollama?.primary || 'qwen3:8b';
 
-      // Deliver results
+      if (output.error && !output.translated) {
+        console.error(`${PREFIX} ${chalk.red('✗')} Translation error: ${output.error}`);
+      } else {
+        console.log(`${PREFIX} ${chalk.gray('…')} Done: ${output.detected_language} → ${output.target_language}, confidence: ${output.confidence}`);
+      }
+
       agent.sendResult(taskInfo.requesterId, taskId, output, {
-        actualCost: 0, // All local — $0
+        actualCost: 0,
         actualTime,
-        modelUsed: model
+        modelUsed: config.models?.ollama?.primary || 'qwen3:14b'
       });
 
       console.log(`${PREFIX} ${chalk.bold('►')} Results delivered for ${taskId.slice(0, 16)} (${actualTime}s)`);
@@ -217,9 +197,8 @@ function _wireEventHandlers() {
     } catch (err) {
       console.error(`${PREFIX} ${chalk.red('✗')} Task failed: ${err.message}`);
 
-      // Deliver error result so Eli doesn't hang
       agent.sendResult(taskInfo.requesterId, taskId,
-        { error: `Beta task failed: ${err.message}` },
+        { error: `Translation failed: ${err.message}`, translated: '', detected_language: 'unknown', confidence: 0 },
         { status: 'failed' }
       );
     }
@@ -227,7 +206,6 @@ function _wireEventHandlers() {
     activeTasks.delete(taskId);
   });
 
-  // ── task_settle: log settlements ────────────────────────────────
   agent.on('task_settle', (msg) => {
     console.log(`${PREFIX} ${chalk.green('$')} Settlement: $${msg.payload.amount_usd}`);
   });
@@ -241,12 +219,11 @@ function _wireEventHandlers() {
     }
   });
 
-  // ── Connection lifecycle ────────────────────────────────────────
   agent.on('disconnected', () => {
     console.log(`${PREFIX} Disconnected from relay.`);
   });
 
-  // Clear stale tasks on reconnect to prevent memory leak / hung tasks
+  // Clear stale tasks on reconnect
   agent.connection.on('connected', () => {
     if (activeTasks.size > 0) {
       console.log(`${PREFIX} Reconnected — clearing ${activeTasks.size} stale active task(s)`);
@@ -265,14 +242,13 @@ function shutdown(signal) {
   }
   closeDatabase();
 
-  console.log(`${PREFIX} Goodbye. 👋`);
+  console.log(`${PREFIX} Goodbye.`);
   process.exit(0);
 }
 
 process.on('SIGTERM', () => shutdown('SIGTERM'));
 process.on('SIGINT', () => shutdown('SIGINT'));
 
-// Catch unhandled errors — log and exit (PM2 will restart)
 process.on('uncaughtException', (err) => {
   console.error(`${PREFIX} UNCAUGHT EXCEPTION: ${err.message}`);
   console.error(err.stack);

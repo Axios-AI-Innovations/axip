@@ -142,6 +142,8 @@ export function createRelayServer({ port = 4200, host = '127.0.0.1' } = {}) {
         clients.delete(ws.agentId);
         rateLimitWindows.delete(ws.agentId);
         logger.info('relay', 'Agent disconnected', { agentId: ws.agentId });
+        // Cancel any tasks this agent was requesting (prevents stale tasks in providers)
+        taskManager.handleRequesterDisconnect(ws.agentId);
       }
     });
 

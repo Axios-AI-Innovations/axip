@@ -11,10 +11,15 @@
  */
 
 import { randomUUID } from 'crypto';
+import { EventEmitter } from 'events';
 import { getDb } from './db.js';
 import * as reputation from './reputation.js';
 import * as ledger from './ledger.js';
 import * as logger from './logger.js';
+
+// Event emitter for task lifecycle events (consumed by SSE endpoint)
+export const taskEvents = new EventEmitter();
+taskEvents.setMaxListeners(50); // Allow many SSE clients
 
 // Server reference — set after server construction to avoid circular deps
 let server = null;
@@ -86,6 +91,15 @@ export function handleTaskRequest(msg, capableAgentIds) {
 
   taskTimeouts.set(taskId, timeoutId);
 
+  taskEvents.emit('activity', {
+    event: 'task:requested',
+    taskId,
+    capability: msg.payload.capability_required,
+    agentName: requesterId.replace(/-[a-zA-Z0-9]{8}$/, ''),
+    reward: msg.payload.reward || 0,
+    timestamp: new Date().toISOString()
+  });
+
   return { taskId, requesterId };
 }
 
@@ -119,6 +133,16 @@ export function handleTaskBid(msg) {
   if (task.state === 'REQUESTED') {
     transition(taskId, 'REQUESTED', 'BIDDING');
   }
+
+  taskEvents.emit('activity', {
+    event: 'task:bid',
+    taskId,
+    capability: db.prepare('SELECT capability_required FROM tasks WHERE task_id = ?').get(taskId)?.capability_required,
+    agentName: bidderId.replace(/-[a-zA-Z0-9]{8}$/, ''),
+    price: price || 0,
+    confidence: confidence || 0.5,
+    timestamp: new Date().toISOString()
+  });
 
   return { taskId, bidId: actualBidId, requesterId: task.requester_id };
 }
@@ -211,6 +235,15 @@ export async function handleTaskAccept(msg) {
 
   taskTimeouts.set(taskId, timeoutId);
 
+  taskEvents.emit('activity', {
+    event: 'task:accepted',
+    taskId,
+    capability: db.prepare('SELECT capability_required FROM tasks WHERE task_id = ?').get(taskId)?.capability_required,
+    agentName: bid.bidder_id.replace(/-[a-zA-Z0-9]{8}$/, ''),
+    price: bid.price_usd,
+    timestamp: new Date().toISOString()
+  });
+
   return { taskId, assigneeId: bid.bidder_id, price: bid.price_usd };
 }
 
@@ -250,6 +283,14 @@ export function handleTaskResult(msg) {
     taskTimeouts.delete(taskId);
   }
 
+  taskEvents.emit('activity', {
+    event: 'task:completed',
+    taskId,
+    capability: db.prepare('SELECT capability_required FROM tasks WHERE task_id = ?').get(taskId)?.capability_required,
+    agentName: senderId.replace(/-[a-zA-Z0-9]{8}$/, ''),
+    timestamp: new Date().toISOString()
+  });
+
   return { taskId, requesterId: task.requester_id };
 }
 
@@ -263,7 +304,7 @@ export async function handleTaskVerify(msg) {
   const verifierId = msg.from.agent_id;
 
   // Validate
-  const task = db.prepare('SELECT state, requester_id, assignee_id, reward FROM tasks WHERE task_id = ?').get(taskId);
+  const task = db.prepare('SELECT state, requester_id, assignee_id, reward, capability_required FROM tasks WHERE task_id = ?').get(taskId);
   if (!task) {
     logger.warn('task', 'Verify for unknown task', { taskId });
     return null;
@@ -314,6 +355,15 @@ export async function handleTaskVerify(msg) {
     transition(taskId, 'VERIFIED', 'SETTLED');
     db.prepare("UPDATE tasks SET settled_at = datetime('now') WHERE task_id = ?").run(taskId);
 
+    taskEvents.emit('activity', {
+      event: 'task:settled',
+      taskId,
+      capability: task.capability_required,
+      agentName: task.assignee_id.replace(/-[a-zA-Z0-9]{8}$/, ''),
+      amount,
+      timestamp: new Date().toISOString()
+    });
+
     return {
       taskId,
       assigneeId: task.assignee_id,
@@ -353,6 +403,72 @@ export function getTask(taskId) {
 export function getAllTasks() {
   const db = getDb();
   return db.prepare('SELECT * FROM tasks ORDER BY created_at DESC').all();
+}
+
+/**
+ * Handle agent disconnect: cancel any tasks this agent was requesting.
+ *
+ * When a requester disconnects while a task is in REQUESTED, BIDDING, or
+ * IN_PROGRESS state, we mark the task FAILED and notify any assigned provider
+ * (so the provider can clear it from their local activeTasks Map).
+ *
+ * @param {string} agentId - The agent that disconnected
+ */
+export function handleRequesterDisconnect(agentId) {
+  if (!agentId) return;
+  const db = getDb();
+
+  // Find active tasks where this agent is the requester
+  const activeTasks = db.prepare(`
+    SELECT task_id, state, assignee_id
+    FROM tasks
+    WHERE requester_id = ? AND state IN ('REQUESTED', 'BIDDING', 'IN_PROGRESS')
+  `).all(agentId);
+
+  if (activeTasks.length === 0) return;
+
+  logger.info('task', `Requester disconnected — cancelling ${activeTasks.length} active task(s)`, { agentId });
+
+  for (const task of activeTasks) {
+    // Transition to FAILED
+    const success = transition(task.task_id, task.state, 'FAILED');
+    if (!success) continue;
+
+    // Cancel any pending bid-acceptance timeout
+    const timeoutId = taskTimeouts.get(task.task_id);
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+      taskTimeouts.delete(task.task_id);
+    }
+
+    // Notify the assigned provider (if any) so they can clear the task locally
+    if (task.assignee_id && server) {
+      const cancelMsg = {
+        type: 'task_cancel',
+        id: `cancel_${task.task_id}`,
+        from: { agent_id: 'relay', name: 'AXIP Relay' },
+        to: task.assignee_id,
+        payload: {
+          task_id: task.task_id,
+          reason: 'requester_disconnected'
+        },
+        timestamp: new Date().toISOString()
+      };
+      try {
+        server.sendTo(task.assignee_id, cancelMsg);
+        logger.info('task', 'Sent task_cancel to provider on requester disconnect', {
+          taskId: task.task_id,
+          provider: task.assignee_id
+        });
+      } catch (err) {
+        logger.warn('task', 'Could not notify provider of cancellation', {
+          taskId: task.task_id,
+          provider: task.assignee_id,
+          error: err.message
+        });
+      }
+    }
+  }
 }
 
 /**

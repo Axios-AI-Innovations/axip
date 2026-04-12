@@ -197,6 +197,15 @@ function _wireEventHandlers() {
     console.log(`${PREFIX} ${chalk.green('$')} Settlement: $${msg.payload.amount_usd}`);
   });
 
+  // ── task_cancel: relay signals requester disconnected — clear local state ──
+  agent.on('task_cancel', (msg) => {
+    const taskId = msg.payload?.task_id;
+    if (taskId && activeTasks.has(taskId)) {
+      console.log(`${PREFIX} ${chalk.yellow('✕')} Task cancelled by relay (requester disconnected): ${taskId.slice(0, 16)}`);
+      activeTasks.delete(taskId);
+    }
+  });
+
   agent.on('disconnected', () => {
     console.log(`${PREFIX} Disconnected from relay.`);
   });

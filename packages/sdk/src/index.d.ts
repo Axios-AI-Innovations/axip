@@ -72,6 +72,7 @@ export type MessageType =
   | 'task_result'
   | 'task_verify'
   | 'task_settle'
+  | 'task_cancel'
   | 'heartbeat'
   | 'capability_update'
   | 'balance_request'
@@ -396,6 +397,7 @@ export declare class AXIPAgent extends EventEmitter {
   on(event: 'task_result', listener: (msg: AXIPMessage<TaskResultPayload>) => void): this;
   on(event: 'task_verify', listener: (msg: AXIPMessage<TaskVerifyPayload>) => void): this;
   on(event: 'task_settle', listener: (msg: AXIPMessage<TaskSettlePayload>) => void): this;
+  on(event: 'task_cancel', listener: (msg: AXIPMessage<{ task_id: string; reason: string }>) => void): this;
   on(event: 'error_message', listener: (msg: AXIPMessage<ErrorPayload>) => void): this;
   on(event: 'unknown_message', listener: (msg: AXIPMessage) => void): this;
   on(event: string, listener: (...args: unknown[]) => void): this;
