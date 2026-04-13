@@ -1,6 +1,75 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-12
+> Last updated: 2026-04-13
+
+---
+
+## Scheduled Task Run (2026-04-12): axip-mcp-server-build (2nd run)
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package
+
+**Result: Already complete. No changes needed.**
+
+### What Was Checked
+
+- **SDK publishing (Epic 3)**: SDK-1/2/3 complete; SDK-5 (`npm publish`) is manual-only — MCP server build proceeds regardless (local path dependency `file:../sdk` works without publishing)
+- **MCP-1** (Package scaffold): `packages/mcp-server/package.json` present — `@axip/mcp-server`, bin entry `axip-mcp`, correct deps
+- **MCP-2** (`axip_discover_agents`): `src/tools.js` present
+- **MCP-3** (`axip_request_task`): `src/tools.js` present
+- **MCP-4** (`axip_check_balance`): `src/tools.js` present
+- **MCP-5** (`axip_network_status`): `src/tools.js` present
+- **MCP-6** (`network_capabilities` resource): `src/resources.js` present
+- **CLI binary**: `bin/axip-mcp.js` present
+- **node_modules**: `zod` and `@modelcontextprotocol/sdk` installed
+
+| Task | Status |
+|------|--------|
+| MCP-1 | ✅ Complete |
+| MCP-2 | ✅ Complete |
+| MCP-3 | ✅ Complete |
+| MCP-4 | ✅ Complete |
+| MCP-5 | ✅ Complete |
+| MCP-6 | ✅ Complete |
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5; public relay 404 should be investigated first)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+7. **INT-6** — Submit OpenClaw skill to Skills Registry (**MANUAL** — requires OpenClaw account)
+
+---
+
+## Scheduled Task Run (2026-04-12): axip-sdk-typescript
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: Already complete. No changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records including SEC-1 through SEC-8)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): Already exists — full TypeScript definitions covering `AXIPAgent`, `AXIPConnection`, `AXIPIdentity`, all message/payload types, `crypto` and `messages` namespaces, and `task_cancel` event (added in axip-load-test run)
+- **SDK-2** (`packages/sdk/package.json`): Already has `files: ["src/"]`, `engines: {node: ">=18.0.0"}`, `types: "src/index.d.ts"`, `license: "MIT"`, `repository: {type: "git", url: "https://github.com/elibot0395/axip"}`, and `description` — fully npm-publish ready
+- **SDK-3** (`packages/sdk/README.md`): Already has one-line description, npm install command, 20-line quickstart (connect, discover, task lifecycle), and link to full docs
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Complete |
+| SDK-2 | `packages/sdk/package.json` | ✅ Complete |
+| SDK-3 | `packages/sdk/README.md` | ✅ Complete |
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
 
 ---
 
@@ -2435,6 +2504,71 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 
 ---
 
+## Scheduled Task Run (2026-04-13): axip-daily-driver
+
+**Task:** DSH-5 — Task posting web UI + fix /api/credits/platform 503 spam
+
+### What Was Implemented
+
+| Component | File | Change |
+|-----------|------|--------|
+| DSH-5 | `packages/hive-portal/src/pages/post-task.html` | New `/post-task` page: capability dropdown (live), description textarea, max budget input, result display with agent/cost/time metadata |
+| DSH-5 | `packages/hive-portal/src/task-requester.js` | `portal-requester` agent — persistent SDK connection managing full task lifecycle (broadcast → bid → accept → result → verify) |
+| DSH-5 | `packages/hive-portal/src/index.js` | `POST /api/task/submit` + `GET /api/task/capabilities` routes; imported task-requester module; added express.json() middleware; added `POST` to CORS methods |
+| DSH-5 | `packages/hive-portal/package.json` | Added `@axip/sdk: file:../sdk` dependency (resolved via npm workspaces root node_modules) |
+| Bug fix | `packages/relay/src/dashboard/server.js` | `/api/credits/platform` now returns `200 + { available: false, ... }` when PostgreSQL unavailable (was 503) — stops ~1 req/sec warn spam in portal error log |
+| Bug fix | `packages/hive-portal/src/index.js` | Updated credit system health check to use `creditsRes?.available !== false` instead of `creditsRes?.error === undefined` |
+
+### Verification
+
+- `GET /api/task/capabilities` → `{"capabilities":["alert","classify","code_review","data_extraction","monitor","route","summarize","translate","web_search"]}` ✅
+- `GET /post-task` → 200 ✅
+- `GET /api/credits/platform` → `{"available":false,"balance_usd":0,"total_earned":0,"recent_transactions":[]}` (200, not 503) ✅
+- Portal error log line count: stable (no new entries after restart) ✅
+- All 7 anchor agents online after relay restart ✅
+
+### Week 4 Status
+
+| Task | Status |
+|------|--------|
+| VPS-1 through VPS-4 | ⏭️ MANUAL — Hetzner VPS provisioning |
+| INT-5 (Python SDK) | ✅ Done |
+| INT-1 (OpenClaw skill) | ⏭️ MANUAL — needs Elias input on skill format |
+| INT-2 (CrewAI wrapper) | ✅ Done |
+| INT-3 (LangChain) | ✅ Done |
+| INT-4 (OpenAI Agents SDK) | ✅ Done |
+| DSH-1 (onboarding guide) | ✅ Done |
+| DSH-2 (marketplace search) | ✅ Done |
+| DSH-3 (leaderboard) | ✅ Done |
+| DSH-4 (stats timeline) | ✅ Done |
+| DSH-5 (task posting web UI) | ✅ Done (this run) |
+| DSH-6 (OpenAPI docs) | ✅ Done |
+| DSH-7 (status page) | ✅ Done |
+| INT-6 (OpenClaw Skills Registry) | ⏭️ MANUAL — requires OpenClaw account |
+| AGT-7 (load test) | ✅ Done |
+
+**Week 4 is complete** (all code tasks done; 3 MANUAL blockers remain: VPS provisioning, INT-1 OpenClaw skill, INT-6 registry submission).
+
+### Next Tasks
+
+1. **Week 5 — LCH-1**: Write launch blog post (code/content task)
+2. **Week 5 — LCH-4**: Record demo video script/outline
+3. **Week 5 — LCH-5**: Set up Discord community (MANUAL)
+4. **Week 5 — LCH-7**: Create examples repo with 5+ agents
+
+### MANUAL Actions Needed (updated)
+
+1. **Fix Telegram bot token** — URGENT (day 9+): update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **npm publish @axip/sdk** (SDK-5): `cd ~/axios-axip/packages/sdk && npm publish --access public`
+3. **npm publish @axip/mcp-server** (MCP-7): after SDK-5
+4. **Create public GitHub repo** (SDK-6): github.com/axiosai/axip
+5. **Stripe integration** (PAY-2/3/4): requires Stripe API keys
+6. **Hetzner VPS** (VPS-1 through VPS-4): provision, deploy relay, configure WSS
+7. **INT-1 OpenClaw skill**: needs Elias input on OpenClaw skill format
+8. **INT-6 OpenClaw registry**: requires OpenClaw account
+
+---
+
 ## Next Tasks (Week 3 — Remaining)
 
 1. **PAY-2** — MANUAL: Stripe Connect setup (requires Stripe API keys)
@@ -2491,3 +2625,5 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-04-08 | axip-test-verify (evening) | 2 git commits today (DSH-2: capability marketplace search/filter enhancements). PM2 not in PATH but all services responding on ports. Relay: health OK, 7/35 agents online, 6.5D uptime, relay v0.1.0. Portal: relay_online=true, 9 capabilities, 15 tasks settled, $0.18 earned. Online agents: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta ✅. DSH-2 verified: portal HTML confirms capability filter pills, search input, cap-pill styling, and result count display all deployed ✅. /api/network/leaderboard endpoint responding with agent data ✅ (tasks_completed all 0 — expected, not tracked per-agent yet). Relay error log: N/A (pm2 logs unavailable — no pm2 in PATH). ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — 4th consecutive day. MANUAL blockers remain: fix Telegram token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token, (2) DSH-3 or next dashboard task, (3) npm publish @axip/sdk (SDK-5). |
 | 2026-04-10 | axip-test-verify (evening) | 2 git commits today (DSH-3: leaderboard stats strip + badges; DSH-4: /api/network/stats/timeline endpoint + bar chart). All 10 PM2 processes online (eli stopped — expected). Relay: 7/35 agents online, 17 tasks settled, $0.18 earned, 8D uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). DSH-3 verified: /api/network/leaderboard returns reputation-sorted agent list ✅. DSH-4 verified: /api/network/stats/timeline returns daily task history (total/settled/volume_usd per day) ✅. All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — day 7, status messages still not delivering. MANUAL blockers remain: fix Telegram token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token, (2) DSH-5 agent detail page, (3) npm publish @axip/sdk (SDK-5). |
 | 2026-04-11 | axip-test-verify (evening) | No new git commits today. All 10 PM2 processes online (eli stopped — expected). Relay: 7/35 agents online, 18 tasks settled (+1 from SDK cron smoke test at 23:09 UTC), $0.18 earned, 9D uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). SDK smoke test confirmed in relay logs: full task lifecycle REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED at 23:09 UTC ✅. All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. ⚠️ NEW ISSUE: hive-portal polling /api/credits/platform → relay returns 503 "PostgreSQL credit system unavailable" — portal making ~1 req/sec, logs spammed. Investigate if PostgreSQL connection dropped or if this endpoint needs graceful degradation. ⚠️ Telegram bot token STILL invalid — day 8, status messages not delivering. MANUAL blockers remain: fix Telegram token (URGENT), fix PostgreSQL/credits endpoint, npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token, (2) fix /api/credits/platform 503 (portal log spam), (3) DSH-5 agent detail page. |
+| 2026-04-13 | axip-daily-driver | DSH-5 implemented: task posting web UI at /post-task. Capability dropdown (live from relay), description textarea, max budget input. Backend task-requester.js manages portal-requester agent lifecycle. POST /api/task/submit runs full task flow (broadcast → bid → accept → result → verify) with 60s timeout. GET /api/task/capabilities returns online capabilities. Also fixed /api/credits/platform: now returns 200 + {available:false} instead of 503 when PG unavailable — stops ~1/sec warn spam in portal logs. Portal error log stable (no new entries after restart). Week 4 code tasks are now ALL COMPLETE. Next: Week 5 launch tasks (LCH-1 blog post, LCH-7 examples repo). MANUAL blockers remain: Telegram bot token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4), Hetzner VPS (VPS-1 through VPS-4). |
+| 2026-04-12 | axip-test-verify (evening) | No new git commits today. All 10 PM2 processes online (eli stopped — expected). Relay: 7 agents online (270 in registry), 19 tasks settled (+1 since yesterday), $0.49 earned, 10D+ uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors) ✅. agent-beta (scout-beta) active: recently processed summarize task "advantages of reputation-based routing", reconnected cleanly (cleared 1 stale task). All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. ⚠️ CLARIFICATION on credits/platform 503: not 1/sec — confirmed ~1/min (1254 log entries over ~20h from 60s runHealthCheck loop). Gracefully handled by portal (returns null, no crash), just log noise (~1200 entries/day). Fix: suppress console.warn for expected 503 on credits/platform, or add PG graceful degradation. ⚠️ agent-delta (sentinel) persistent LLM JSON parse failures — qwen3:1.7b returning non-JSON for assessments. Deterministic checks still run (non-critical cosmetic issue). ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — day 9, no status messages delivered. MANUAL blockers remain: fix Telegram token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token — URGENT, 9 days broken, (2) silence credits/platform 503 log spam, (3) fix agent-delta JSON parsing, (4) DSH-5 agent detail page, (5) npm publish @axip/sdk (SDK-5). |
