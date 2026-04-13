@@ -19,6 +19,7 @@ import {
   getSkillPerformance, getRecentLearningInsights, getInsightCountByDay,
   getBrainStats, getBrainGrowth, getImprovementPipeline, getBuildOutcomes
 } from './data.js';
+import { submitTask, getCapabilities } from './task-requester.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -31,11 +32,13 @@ const app = express();
 // PUB-2: CORS headers — allow external agents and dashboards to query the portal API
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
+
+app.use(express.json({ limit: '64kb' }));
 
 // Initialize data sources for Agent Intelligence dashboard
 initDataSources();
@@ -280,8 +283,8 @@ app.get('/api/network/health', async (req, res) => {
     const totalAgents = agents ? agents.length : 0;
     const tasksSettled = stats?.tasks?.settled || 0;
 
-    // Credit system: check if PG / credits endpoint responded
-    const creditSystemUp = creditsRes !== null && creditsRes?.error === undefined;
+    // Credit system: check if PG / credits endpoint responded and PG is available
+    const creditSystemUp = creditsRes !== null && creditsRes?.error === undefined && creditsRes?.available !== false;
 
     res.json({
       relay_online: relayUp,
@@ -969,7 +972,7 @@ async function runHealthCheck() {
     relayUp = stats !== null;
     agentsOnline = agents ? agents.filter(a => a.status === 'online').length : 0;
     agentsTotal = agents ? agents.length : 0;
-    creditUp = creditsRes !== null && creditsRes?.error === undefined;
+    creditUp = creditsRes !== null && creditsRes?.error === undefined && creditsRes?.available !== false;
     tasksSettled = stats?.tasks?.settled || 0;
   } catch {}
 
@@ -1026,6 +1029,52 @@ app.get('/api/network/status/history', (req, res) => {
 app.get('/status', (req, res) => {
   const statusHTML = readFileSync(join(__dirname, 'pages', 'status.html'), 'utf-8');
   res.type('html').send(statusHTML);
+});
+
+// ─── DSH-5: Task Posting Web UI ─────────────────────────────────
+
+// Serve the task posting page
+app.get('/post-task', (req, res) => {
+  const html = readFileSync(join(__dirname, 'pages', 'post-task.html'), 'utf-8');
+  res.type('html').send(html);
+});
+
+// Return list of available capabilities (online agents only)
+app.get('/api/task/capabilities', async (req, res) => {
+  try {
+    const caps = await getCapabilities(config.relay.api_url);
+    res.json({ capabilities: caps });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch capabilities' });
+  }
+});
+
+// Submit a task — blocks until complete or timeout
+app.post('/api/task/submit', async (req, res) => {
+  const { capability, description, max_budget } = req.body || {};
+
+  if (!capability || typeof capability !== 'string') {
+    return res.status(400).json({ error: 'capability is required' });
+  }
+  if (!description || typeof description !== 'string' || description.trim().length < 5) {
+    return res.status(400).json({ error: 'description is required (min 5 chars)' });
+  }
+
+  const budget = Math.min(Math.max(parseFloat(max_budget) || 0.10, 0.001), 1.00);
+
+  try {
+    const result = await submitTask(capability.trim(), description.trim(), budget);
+    res.json(result);
+  } catch (err) {
+    res.status(503).json({
+      task_id: null,
+      status: 'failed',
+      result: null,
+      cost: 0,
+      agent_used: null,
+      error: err.message
+    });
+  }
 });
 
 // ─── Admin Proxy Routes (relay pass-through) ────────────────────

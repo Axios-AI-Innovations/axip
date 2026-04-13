@@ -204,11 +204,11 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
 
   app.get('/api/credits/platform', async (req, res) => {
     if (!pgLedger.isPgAvailable()) {
-      return res.status(503).json({ error: 'PostgreSQL credit system unavailable' });
+      return res.json({ available: false, balance_usd: 0, total_earned: 0, recent_transactions: [] });
     }
     try {
       const earnings = await pgLedger.getPlatformEarnings();
-      res.json(earnings);
+      res.json({ available: true, ...earnings });
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
