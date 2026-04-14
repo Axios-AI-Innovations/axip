@@ -1,0 +1,13 @@
+{
+  "name": "axip-example-text-tools-agent",
+  "version": "1.0.0",
+  "description": "Multi-capability text processing agent",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@axip/sdk": "^1.0.0"
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "name": "axip-example-task-requester",
+  "version": "1.0.0",
+  "description": "Request a task from the AXIP marketplace and await the result",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@axip/sdk": "^1.0.0"
+  }
+}
