@@ -4,6 +4,73 @@
 
 ---
 
+## Scheduled Task Run (2026-04-13): axip-mcp-server-build (3rd run)
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package
+
+**Result: Already complete. No changes needed.**
+
+### What Was Checked
+
+- **MCP server directory**: `packages/mcp-server/` exists with all expected files
+- **MCP-1** (Package scaffold): `package.json` present — `@axip/mcp-server`, bin entry `axip-mcp`, correct deps (`@modelcontextprotocol/sdk ^1.29.0`, `@axip/sdk file:../sdk`, `zod`)
+- **MCP-2–5** (Tools `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status`): `src/tools.js` present
+- **MCP-6** (`network_capabilities` resource): `src/resources.js` present
+- **Entry point**: `src/index.js` — module imports cleanly (`import ok`)
+- **CLI binary**: `bin/axip-mcp.js` present
+- **node_modules**: `@modelcontextprotocol/sdk` and `zod` installed
+
+| Task | Status |
+|------|--------|
+| MCP-1 | ✅ Complete |
+| MCP-2 | ✅ Complete |
+| MCP-3 | ✅ Complete |
+| MCP-4 | ✅ Complete |
+| MCP-5 | ✅ Complete |
+| MCP-6 | ✅ Complete |
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+7. **INT-6** — Submit OpenClaw skill to Skills Registry (**MANUAL** — requires OpenClaw account)
+
+---
+
+## Scheduled Task Run (2026-04-13): axip-sdk-typescript (3rd run)
+
+**Task:** SDK-1, SDK-2, SDK-3 — TypeScript types, package.json metadata, quickstart README
+
+**Result: Already complete. No changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): File exists — confirmed present
+- **SDK-2** (`packages/sdk/package.json`): File exists — confirmed present with all required fields
+- **SDK-3** (`packages/sdk/README.md`): File exists — confirmed present with quickstart content
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Complete |
+| SDK-2 | `packages/sdk/package.json` | ✅ Complete |
+| SDK-3 | `packages/sdk/README.md` | ✅ Complete |
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with fresh token from @BotFather
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+
+---
+
 ## Scheduled Task Run (2026-04-12): axip-mcp-server-build (2nd run)
 
 **Task:** MCP-1 through MCP-6 — AXIP MCP Server package
@@ -2627,3 +2694,4 @@ Integration guide for LangChain/LangGraph users: 5-line async setup, local dev v
 | 2026-04-11 | axip-test-verify (evening) | No new git commits today. All 10 PM2 processes online (eli stopped — expected). Relay: 7/35 agents online, 18 tasks settled (+1 from SDK cron smoke test at 23:09 UTC), $0.18 earned, 9D uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors). SDK smoke test confirmed in relay logs: full task lifecycle REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED at 23:09 UTC ✅. All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. ⚠️ NEW ISSUE: hive-portal polling /api/credits/platform → relay returns 503 "PostgreSQL credit system unavailable" — portal making ~1 req/sec, logs spammed. Investigate if PostgreSQL connection dropped or if this endpoint needs graceful degradation. ⚠️ Telegram bot token STILL invalid — day 8, status messages not delivering. MANUAL blockers remain: fix Telegram token (URGENT), fix PostgreSQL/credits endpoint, npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token, (2) fix /api/credits/platform 503 (portal log spam), (3) DSH-5 agent detail page. |
 | 2026-04-13 | axip-daily-driver | DSH-5 implemented: task posting web UI at /post-task. Capability dropdown (live from relay), description textarea, max budget input. Backend task-requester.js manages portal-requester agent lifecycle. POST /api/task/submit runs full task flow (broadcast → bid → accept → result → verify) with 60s timeout. GET /api/task/capabilities returns online capabilities. Also fixed /api/credits/platform: now returns 200 + {available:false} instead of 503 when PG unavailable — stops ~1/sec warn spam in portal logs. Portal error log stable (no new entries after restart). Week 4 code tasks are now ALL COMPLETE. Next: Week 5 launch tasks (LCH-1 blog post, LCH-7 examples repo). MANUAL blockers remain: Telegram bot token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4), Hetzner VPS (VPS-1 through VPS-4). |
 | 2026-04-12 | axip-test-verify (evening) | No new git commits today. All 10 PM2 processes online (eli stopped — expected). Relay: 7 agents online (270 in registry), 19 tasks settled (+1 since yesterday), $0.49 earned, 10D+ uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors) ✅. agent-beta (scout-beta) active: recently processed summarize task "advantages of reputation-based routing", reconnected cleanly (cleared 1 stale task). All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. ⚠️ CLARIFICATION on credits/platform 503: not 1/sec — confirmed ~1/min (1254 log entries over ~20h from 60s runHealthCheck loop). Gracefully handled by portal (returns null, no crash), just log noise (~1200 entries/day). Fix: suppress console.warn for expected 503 on credits/platform, or add PG graceful degradation. ⚠️ agent-delta (sentinel) persistent LLM JSON parse failures — qwen3:1.7b returning non-JSON for assessments. Deterministic checks still run (non-critical cosmetic issue). ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — day 9, no status messages delivered. MANUAL blockers remain: fix Telegram token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4). Next: (1) fix Telegram bot token — URGENT, 9 days broken, (2) silence credits/platform 503 log spam, (3) fix agent-delta JSON parsing, (4) DSH-5 agent detail page, (5) npm publish @axip/sdk (SDK-5). |
+| 2026-04-13 | axip-test-verify (evening) | 2 git commits today (DSH-5: task posting web UI + credits/platform 503 fix). All 10 PM2 processes online (eli stopped — expected). Relay: 7/270 agents online, 20 tasks settled (+1 from SDK smoke test at 23:09 UTC), $0.49 earned, 11D uptime. Portal: relay_online=true, 9 capabilities registered. Relay error log: EMPTY (zero errors) ✅. DSH-5 verified: /post-task page loads ✅, /api/task/capabilities returns 9 capabilities ✅. credits/platform fix verified: relay now returns 200 + {"available":false} instead of 503 ✅. SDK smoke test at 23:09 UTC: full task lifecycle REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED ✅. All 7 anchor agents online: summarizer-alpha, translator-alpha, data-extract, code-review, sentinel-delta, router-gamma, scout-beta. Week 4 ALL COMPLETE (all code tasks done). ⚠️ Telegram bot token STILL invalid (401 Unauthorized) — day 10, no status messages delivered. MANUAL blockers remain: fix Telegram token (URGENT), npm publish (SDK-5, MCP-7), GitHub repo (SDK-6), Stripe keys (PAY-2/3/4), Hetzner VPS (VPS-1–VPS-4). Next: (1) fix Telegram bot token (URGENT), (2) LCH-1 launch blog post, (3) LCH-7 examples repo (5+ agents), (4) npm publish @axip/sdk (SDK-5), (5) GitHub repo creation (SDK-6). |
