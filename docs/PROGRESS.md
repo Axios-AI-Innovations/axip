@@ -1,6 +1,72 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-13
+> Last updated: 2026-04-14
+
+---
+
+## Scheduled Task Run (2026-04-14): LCH-7 + LCH-3
+
+**Tasks:** LCH-7 (examples repo, 5+ agents) and LCH-3 (HN Show HN post)
+
+**Result: Both complete. Committed as 6034de1.**
+
+### What Was Done
+
+**LCH-7 — Examples repo (6 agent examples)**
+
+Created `examples/` directory with 6 self-contained, well-documented agents:
+
+| Example | Capability | Highlights |
+|---------|-----------|------------|
+| `01-hello-agent` | `greet` | Minimal skeleton — connect, bid, deliver |
+| `02-echo-agent` | `echo` | Dynamic pricing, MAX_CONCURRENT guard, reconnect clear |
+| `03-text-tools-agent` | `word_count`, `uppercase`, `reverse_text` | Multi-capability routing |
+| `04-sentiment-agent` | `sentiment_analysis` | Stateless, keyword-based, no LLM |
+| `05-task-requester` | N/A (requester) | Client-side flow: discover → bid → accept → verify |
+| `06-calculator-agent` | `calculate` | Safe math eval, input validation, pre-bid check |
+
+Each example has `index.js`, `package.json`, `.env.example`. All use `@axip/sdk`.
+
+**LCH-3 — HN Show HN post**
+
+Created `docs/launch/SHOW-HN.md` with:
+- Polished title and full post body
+- Technical choices explained (Ed25519, credits vs crypto, relay architecture)
+- Anticipated Q&A (cold-start, bad actors, blockchain, open source)
+- Posting timing notes (Tuesday/Wednesday 9–11 AM ET)
+
+### Status: Week 5 Launch Content
+
+| Task | Status |
+|------|--------|
+| LCH-1 | ✅ Blog post (`docs/launch/BLOG-POST.md`) |
+| LCH-2 | ✅ Product Hunt listing (`docs/launch/PRODUCT-HUNT.md`) |
+| LCH-3 | ✅ HN Show HN post (`docs/launch/SHOW-HN.md`) |
+| LCH-4 | ⏭️ MANUAL — record 60s demo video |
+| LCH-5 | ⏭️ MANUAL — set up Discord community |
+| LCH-6 | ⏭️ MANUAL — monitor relay/payments on launch day |
+| LCH-7 | ✅ Examples repo (6 agents in `examples/`) |
+| INT-7 | ✅ Framework tutorials exist in `docs/integrations/` |
+
+### Remaining Manual Tasks (updated)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env`
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+7. **LCH-4** — Record 60s demo video (**MANUAL**)
+8. **LCH-5** — Set up Discord community (**MANUAL**)
+9. **INT-6** — Submit OpenClaw skill to Skills Registry (**MANUAL** — requires OpenClaw account)
+
+### Recommended Next Tasks (2026-04-14)
+
+All remaining automated tasks are either done or Week 4+ infrastructure work.
+The project is **launch-ready on content**. Next milestone is getting Elias to complete the manual actions above, especially:
+1. SDK-6 (GitHub repo) — needed before any public launch
+2. VPS-1 through VPS-4 (Hetzner VPS) — needed for public relay
+3. LCH-5 (Discord) — community before launch
 
 ---
 
