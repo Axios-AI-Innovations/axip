@@ -4,6 +4,120 @@
 
 ---
 
+## Evening Verification (2026-04-14)
+
+**Task:** axip-test-verify — nightly smoke test
+
+### What Was Implemented Today
+
+| Commit | Task | Description |
+|--------|------|-------------|
+| `6034de1` | LCH-7 | Examples repo — 6 self-contained agent examples in `examples/` |
+| `6034de1` | LCH-3 | HN Show HN post — `docs/launch/SHOW-HN.md` |
+| MCP build | MCP-1–6 | MCP server package verified complete (4th confirmation) |
+| SDK check | SDK-1–3 | TypeScript types + README verified complete |
+
+### Test Results
+
+| Check | Result | Detail |
+|-------|--------|--------|
+| axip-relay | ✅ PASS | Online, uptime 11h, 0 errors in logs |
+| hive-portal | ✅ PASS | Online, relay_online=true |
+| agent-beta | ⚠️ WARN | PM2 online but logs show "Disconnected from relay" |
+| agent-gamma | ✅ PASS | Online 13D |
+| agent-delta | ✅ PASS | Online 13D |
+| agent-summarize | ✅ PASS | Online 2D |
+| agent-translate | ✅ PASS | Online 2D |
+| agent-code-review | ✅ PASS | Online 2D |
+| agent-data-extract | ✅ PASS | Online 2D |
+| Relay stats | ✅ PASS | 7 agents online, 270 registered, 63 tasks, 21 settled, $0.49 |
+| Task lifecycle | ✅ PASS | Full REQUESTED→BIDDING→ACCEPTED→IN_PROGRESS→COMPLETED→VERIFIED→SETTLED in relay logs |
+
+### Issues Found
+
+1. **agent-beta disconnected** — PM2 shows online but last log entry is "Disconnected from relay". May have lost its WebSocket connection and not reconnected. Low severity — other agents cover its capabilities.
+2. **eli process stopped** — The `eli` PM2 process is stopped (pid 0). Not AXIP-related but worth noting.
+3. **Relay restart count = 5** — Relay has restarted 5 times total; uptime is 11h. Monitor for instability.
+
+### Recommended Next Tasks (2026-04-15)
+
+1. **SDK-6** — Create public GitHub repo (MANUAL — Elias action required)
+2. **VPS-1–4** — Hetzner VPS provisioning (MANUAL — Elias action required)
+3. **SDK-5 + MCP-7** — `npm publish @axip/sdk` and `@axip/mcp-server` (MANUAL — requires npm login)
+4. **LCH-4** — Record 60s demo video (MANUAL)
+5. **LCH-5** — Set up Discord community (MANUAL)
+6. **Investigate agent-beta** — Check why it disconnected and isn't reconnecting
+
+---
+
+## Scheduled Task Run (2026-04-14): axip-mcp-server-build (4th run)
+
+**Task:** MCP-1 through MCP-6 — AXIP MCP Server package
+
+**Result: Already complete. Live connection test PASSED.**
+
+### What Was Checked
+
+- **packages/mcp-server/** directory confirmed present with all expected files
+- **MCP-1** (`package.json`): `@axip/mcp-server` v0.1.0, bin `axip-mcp`, deps `@modelcontextprotocol/sdk ^1.29.0`, `@axip/sdk file:../sdk`, `zod`
+- **MCP-2–5** (`src/tools.js`): All four tools present — `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status`
+- **MCP-6** (`src/resources.js`): `axip://capabilities` and `axip://leaderboard` resources present
+- **CLI binary** (`bin/axip-mcp.js`): Present with full arg parsing and stdio transport
+- **Dependency resolution**: `@modelcontextprotocol/sdk` resolves from root `node_modules/`; `@axip/sdk` resolves via symlink at root `node_modules/@axip/sdk → packages/sdk`
+- **Live connection test**: Server started against local relay `ws://127.0.0.1:4200` — connected and MCP ready in < 2 seconds
+
+```
+[axip-mcp] Starting — relay: ws://127.0.0.1:4200, agent: mcp-client
+[axip-mcp] Connected to AXIP relay
+[axip-mcp] MCP server ready on stdin/stdout
+```
+
+| Task | Status |
+|------|--------|
+| MCP-1 | ✅ Complete |
+| MCP-2 | ✅ Complete |
+| MCP-3 | ✅ Complete |
+| MCP-4 | ✅ Complete |
+| MCP-5 | ✅ Complete |
+| MCP-6 | ✅ Complete |
+
+### Remaining Manual Tasks (unchanged)
+
+1. **Fix Telegram bot token** — URGENT; update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env`
+2. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+3. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+4. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+5. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+6. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+7. **LCH-4** — Record 60s demo video (**MANUAL**)
+8. **LCH-5** — Set up Discord community (**MANUAL**)
+9. **INT-6** — Submit OpenClaw skill to Skills Registry (**MANUAL** — requires OpenClaw account)
+
+---
+
+## Scheduled Task Run (2026-04-14): axip-sdk-typescript
+
+**Tasks:** SDK-1 (TypeScript types), SDK-2 (package.json updates), SDK-3 (quickstart README)
+
+**Result: All tasks already complete — no changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (per prior run records — SEC-1 through SEC-8)
+- **SDK-1** (`packages/sdk/src/index.d.ts`): Already exists — 528 lines of complete TypeScript definitions covering `AXIPAgent`, `AXIPConnection`, `AXIPIdentity`, all message/payload types, and `crypto`/`messages` namespaces
+- **SDK-2** (`packages/sdk/package.json`): Already complete — `files: ["src/"]`, `engines: {node: ">=18.0.0"}`, `types: "src/index.d.ts"`, `license: "MIT"`, `repository: {type: "git", url: "https://github.com/elibot0395/axip"}`, `description` all present
+- **SDK-3** (`packages/sdk/README.md`): Already complete — one-line description, npm install command, quickstart example (connect, discover, task lifecycle), links to full docs (50 lines)
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Complete (528 lines) |
+| SDK-2 | `packages/sdk/package.json` | ✅ Complete (all required metadata) |
+| SDK-3 | `packages/sdk/README.md` | ✅ Complete (50 lines, description + quickstart + docs link) |
+
+No implementation was needed. All SDK publishing prep work remains complete from prior sessions.
+
+---
+
 ## Scheduled Task Run (2026-04-14): LCH-7 + LCH-3
 
 **Tasks:** LCH-7 (examples repo, 5+ agents) and LCH-3 (HN Show HN post)
