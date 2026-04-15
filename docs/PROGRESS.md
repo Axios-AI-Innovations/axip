@@ -1,6 +1,80 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-14
+> Last updated: 2026-04-15
+
+---
+
+## Scheduled Task Run (2026-04-15): axip-daily-driver
+
+**Task:** LCH-6 — Monitor relay, payments, alerts
+
+### Investigation Summary
+
+Verified current state before picking task:
+- All PM2 services online: axip-relay, hive-portal, 7 agents (including scout-beta)
+- **agent-beta disconnect was a false alarm** — "Disconnected from relay" log was from a brief drop; agent reconnected silently. scout-beta IS online in relay (confirmed via `/api/agents`). Root cause: reconnect success was only logged when there were stale tasks; fixed with an unconditional log message.
+- Payment system (PAY-1/5/6/7/8/9): All implemented in `pg-ledger.js` and relay dashboard API
+- Week 2-4 integration tasks: Python SDK + LangChain/CrewAI/OpenAI wrappers all exist in `packages/axip-python/`
+- Blog post, SHOW-HN, PRODUCT-HUNT docs already exist in `docs/launch/`
+- **Next actionable code task: LCH-6** (monitoring daemon)
+
+### What Was Implemented
+
+| Change | Description |
+|--------|-------------|
+| `scripts/axip-monitor.js` | Production health monitoring daemon |
+| Agent-beta reconnect log | Always log on reconnect (not just when stale tasks exist) |
+
+### axip-monitor.js Details
+
+A Node.js monitoring daemon (`packages/scripts/axip-monitor.js`) that runs as PM2 process `axip-monitor`:
+
+**Checks every 2 minutes:**
+- Relay health (`/health` endpoint) — alerts after 2 consecutive failures
+- Agent count — alerts if < 3 agents online for 2+ checks
+- Payment system (PostgreSQL ledger) — alerts if degraded for 3+ checks
+- PM2 critical processes (`axip-relay`, `hive-portal`) — alerts if down or restarting excessively
+
+**Alert features:**
+- Telegram messages via `~/eli-agent/.env` token
+- 15-minute cooldown per alert type (no spam)
+- Recovery alerts when issues resolve
+- Persistent state in `/tmp/axip-monitor-state.json`
+
+**Usage:**
+```bash
+node scripts/axip-monitor.js           # Single run (cron)
+node scripts/axip-monitor.js --daemon  # Daemon mode (PM2)
+pm2 logs axip-monitor                  # View logs
+```
+
+### Test Results
+
+| Check | Result | Detail |
+|-------|--------|--------|
+| axip-monitor PM2 | ✅ PASS | Running as process #12, daemon mode |
+| Relay health | ✅ PASS | Uptime 1440min, 7 agents online |
+| Agent count | ✅ PASS | 7 >= 3 minimum |
+| Payment system | ⚠️ WARN | PostgreSQL unavailable (known — SQLite fallback) |
+| PM2 processes | ✅ PASS | axip-relay and hive-portal both online |
+| Telegram alerts | ⚠️ BLOCKED | Bot token invalid (known issue — needs manual fix) |
+
+### Manual Actions Required (Elias)
+
+1. **URGENT: Fix Telegram bot token** — Update `TELEGRAM_BOT_TOKEN` in `~/eli-agent/.env` with a valid token so monitoring alerts actually reach you. Without this, the monitor runs but can't send alerts.
+2. **SDK-5** — `npm publish @axip/sdk` (requires npm login)
+3. **SDK-6** — Create public GitHub repo
+4. **MCP-7** — `npm publish @axip/mcp-server` (after SDK-5)
+5. **LCH-4** — Record 60s demo video
+6. **LCH-5** — Set up Discord community
+7. **VPS-1–4** — Hetzner VPS provisioning + DNS
+
+### Recommended Next Tasks (2026-04-16)
+
+1. **AGT-1** — Production upgrade for agent-beta (better error recovery, rate limiting awareness)
+2. **LCH-4** — Demo video (MANUAL — record a 60s task lifecycle)
+3. **SDK-5 / MCP-7** — npm publish (MANUAL — after Telegram token fixed to confirm monitoring works)
+4. **VPS-1** — Hetzner VPS provisioning (MANUAL)
 
 ---
 

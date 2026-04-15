@@ -251,6 +251,8 @@ function _wireEventHandlers() {
     if (activeTasks.size > 0) {
       console.log(`${PREFIX} Reconnected — clearing ${activeTasks.size} stale active task(s)`);
       activeTasks.clear();
+    } else {
+      console.log(`${PREFIX} Reconnected to relay.`);
     }
   });
 }
