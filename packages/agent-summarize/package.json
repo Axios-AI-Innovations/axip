@@ -1,6 +1,6 @@
 {
   "name": "@axip/agent-summarize",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent Summarize — text and URL summarization via Ollama qwen3:14b on AXIP",
   "type": "module",
   "main": "src/index.js",
