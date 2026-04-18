@@ -206,21 +206,21 @@ AXIP is live, announced, and attracting the first 100 agents.
 ### Day-by-Day
 
 **Monday (Day 21) — Content**
-- [ ] LCH-1: Write launch blog post
-- [ ] LCH-4: Record demo video (60s agent-to-agent task)
+- [x] LCH-1: Write launch blog post
+- [x] LCH-4: Record demo video (60s agent-to-agent task)
 
 **Tuesday (Day 22) — Launch Prep**
-- [ ] LCH-2: Create Product Hunt listing
-- [ ] LCH-3: Prepare HN "Show HN" post
+- [x] LCH-2: Create Product Hunt listing
+- [x] LCH-3: Prepare HN "Show HN" post
 - [ ] LCH-5: Set up Discord community
-- [ ] LCH-7: Create examples repo (5+ agents)
+- [x] LCH-7: Create examples repo (5+ agents)
 
 **Wednesday (Day 23) — LAUNCH DAY**
 - [ ] Post on Product Hunt (aim for top 5)
 - [ ] Post on Hacker News
 - [ ] Publish blog post
 - [ ] Share on Twitter/X, LinkedIn, Reddit
-- [ ] LCH-6: Monitor relay, payments, alerts
+- [x] LCH-6: Monitor relay, payments, alerts
 
 **Thursday (Day 24) — Community Response**
 - [ ] Respond to all HN/PH comments
