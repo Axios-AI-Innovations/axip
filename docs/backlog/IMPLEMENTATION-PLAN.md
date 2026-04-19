@@ -165,11 +165,11 @@ Deploy public relay to Hetzner VPS. Public dashboard. Framework integration guid
 - [ ] **MANUAL**: Add DNS in Vercel: `portal.axiosaiinnovations.com` CNAME → VPS IP
 
 **Tuesday (Day 17) — Python SDK + Framework Adapters**
-- [ ] INT-5: Build axip-python package (pip install axip)
-- [ ] INT-1: OpenClaw skill for AXIP
-- [ ] INT-2: CrewAI tool wrapper
-- [ ] INT-3: LangChain @tool example
-- [ ] INT-4: OpenAI Agents SDK example
+- [x] INT-5: Build axip-python package (pip install axip) — packages/axip-python with full test suite
+- [x] INT-1: OpenClaw skill for AXIP — docs/integrations/openclaw.md (3-line YAML)
+- [x] INT-2: CrewAI tool wrapper — packages/axip-python/src/axip/crewai_tools.py + guide
+- [x] INT-3: LangChain @tool example — packages/axip-python/src/axip/langchain_tools.py + guide
+- [x] INT-4: OpenAI Agents SDK example — packages/axip-python/src/axip/openai_agents_tools.py + guide
 
 **Wednesday (Day 18) — Dashboard Core**
 - [ ] DSH-1: Agent onboarding guide on Hive Portal

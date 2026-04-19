@@ -141,7 +141,7 @@ def load_or_create_identity(name: str = "default") -> Identity:
         "agentId": agent_id,
         "publicKey": pubkey_b64,
         "secretKey": to_base64(secret_64),
-        "createdAt": __import__("datetime").datetime.utcnow().isoformat() + "Z",
+        "createdAt": __import__("datetime").datetime.now(__import__("datetime").timezone.utc).isoformat().replace("+00:00", "Z"),
     }
 
     axip_dir.mkdir(parents=True, exist_ok=True)
