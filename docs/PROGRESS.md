@@ -1,6 +1,161 @@
 # AXIP Implementation Progress
 
-> Last updated: 2026-04-19
+> Last updated: 2026-04-20
+
+---
+
+## Scheduled Task Run (2026-04-20): axip-daily-driver
+
+**Task:** Daily database backup script (Nice-to-Have from MANUAL-ACTIONS.md)
+
+**Result: ✅ COMPLETE — backup script + launchd job created and verified.**
+
+### What Was Done
+
+All prior code tasks were complete as of 2026-04-19. The remaining automated task
+available was the daily database backup (MANUAL-ACTIONS.md explicitly noted "Claude Code
+can automate this — just ask").
+
+**Files created:**
+- `scripts/backup.sh` — backs up all SQLite `.db` files via `sqlite3 .backup` (consistent
+  snapshot even with open WAL journals), plus `pg_dump axip_marketplace` schema if
+  PostgreSQL is reachable. Keeps 7 days of backups; older directories pruned automatically.
+- `~/Library/LaunchAgents/com.axip.backup.plist` — macOS launchd job runs `backup.sh`
+  daily at 02:00 AM. Registered with `launchctl load`.
+- `.gitignore` — added `backups/` entry so backup files are not committed.
+
+**Test run (2026-04-20 09:35):**
+- 10 SQLite databases backed up to `backups/2026-04-20/` ✅
+- PostgreSQL skipped (service not running — known existing issue) ✅ (graceful)
+- launchd job registered: `launchctl list | grep axip.backup` shows `- 0 com.axip.backup` ✅
+
+### Services Status
+
+All PM2 processes healthy (11/12 online, axip-monitor stopped — expected).
+No changes to relay/portal/agents.
+
+### Remaining Manual Tasks (unchanged from 2026-04-19)
+
+1. **npm publish @axip/sdk** — `cd ~/axios-axip/packages/sdk && npm publish --access public`
+2. **npm publish @axip/mcp-server** — after SDK-5
+3. **pip publish axip** — `cd packages/axip-python && python -m build && twine upload dist/*`
+4. **Create public GitHub repo** — github.com/axiosai/axip (SDK-6)
+5. **Stripe integration** (PAY-2/3/4) — requires Stripe API keys
+6. **Hetzner VPS provisioning** (VPS-1 through VPS-4)
+7. **Discord community** (LCH-5)
+8. **Launch** — Product Hunt, HN Show, blog post
+9. **Start PostgreSQL** — `brew services start postgresql@17` to activate credit system
+   (backups will then also capture the hive_brain axip_marketplace schema)
+
+---
+
+## Evening Verification (2026-04-19): axip-test-verify
+
+**Result: ✅ All systems healthy. No issues found.**
+
+### What Was Implemented Today
+
+- **INT-5**: Python SDK test suite (60 tests) — `tests/test_crypto.py` (20), `tests/test_messages.py` (26), `tests/test_agent_unit.py` (14)
+- **Bug fix**: `crypto.py` deprecated `datetime.utcnow()` → `datetime.now(timezone.utc)`
+- **MCP server** (9th verification run): confirmed complete, no changes needed
+- **TypeScript SDK** (2nd consecutive verification): confirmed complete
+
+### Test Results
+
+| Check | Status |
+|-------|--------|
+| PM2 processes (11/12 online) | ✅ |
+| axip-relay health (`/api/stats`) | ✅ agents_online=8, tasks_settled=26, $0.59 earned |
+| hive-portal (`/api/network/status`) | ✅ relay_online=true, 10 capabilities |
+| agent-beta connectivity | ✅ relay=ok, uptime=4995m |
+| Python SDK tests (60 tests) | ✅ 60 passed, 0 failed |
+| Relay errors | ⚠️ PostgreSQL degraded (credit system only — non-blocking) |
+| axip-monitor | ⚠️ stopped (expected — manual-start daemon) |
+
+### Issues Found
+
+- **PostgreSQL unavailable** (`warn` level only): `{"msg":"PostgreSQL unavailable — credit system degraded"}` — credits system non-functional but relay fully operational. Existing issue.
+- **axip-monitor** stopped — this is expected behavior (manual/on-demand daemon).
+
+### Recommended Next Tasks for Tomorrow
+
+All automated code tasks are complete. Remaining work is manual launch execution:
+1. **npm publish @axip/sdk** (`npm publish --access public` from `packages/sdk/`)
+2. **npm publish @axip/mcp-server** (after SDK-5)
+3. **pip publish axip** (`python -m build && twine upload dist/*` from `packages/axip-python/`)
+4. **Create public GitHub repo** — github.com/axiosai/axip
+5. **Stripe integration** (PAY-2/3/4) — requires Stripe API keys
+6. **Hetzner VPS provisioning** (VPS-1 through VPS-4)
+7. **Discord community** (LCH-5)
+8. **Launch** — Product Hunt, HN Show, blog post
+
+---
+
+## Scheduled Task Run (2026-04-19): axip-mcp-server-build (9th run)
+
+**Tasks:** MCP-1 through MCP-6 — AXIP MCP Server package
+
+**Result: ✅ Already complete. No changes needed.**
+
+### What Was Checked
+
+- **packages/mcp-server/** all files confirmed present:
+  - `src/index.js`, `src/tools.js`, `src/resources.js`, `bin/axip-mcp.js`, `README.md`
+- **MCP-1** (`package.json`): `@axip/mcp-server` v0.1.0, bin `axip-mcp`, deps `@modelcontextprotocol/sdk ^1.29.0`, `@axip/sdk file:../sdk`, `zod`
+- **MCP-2–5** (`src/tools.js`): All four tools present — `axip_discover_agents`, `axip_request_task`, `axip_check_balance`, `axip_network_status`
+- **MCP-6** (`src/resources.js`): Resource present — `axip://capabilities` (+ bonus `axip://leaderboard`)
+- **Import check**: `node -e "import('./packages/mcp-server/src/index.js')"` — **✅ PASS** (output: `import OK`)
+
+| Task | Status |
+|------|--------|
+| MCP-1 | ✅ Already complete |
+| MCP-2 | ✅ Already complete |
+| MCP-3 | ✅ Already complete |
+| MCP-4 | ✅ Already complete |
+| MCP-5 | ✅ Already complete |
+| MCP-6 | ✅ Already complete |
+
+No implementation needed. MCP server remains complete from 2026-04-15 run. This is the 9th consecutive run confirming completion.
+
+### Remaining Manual Tasks (unchanged)
+
+1. **SDK-5** — `npm publish @axip/sdk` (**MANUAL** — requires npm login)
+2. **SDK-6** — Create public GitHub repo (**MANUAL** — requires Elias action)
+3. **MCP-7** — `npm publish @axip/mcp-server` (**MANUAL** — after SDK-5)
+4. **PAY-2/3/4** — Stripe integration (**MANUAL** — requires Stripe API keys)
+5. **VPS-1 through VPS-4** — Hetzner VPS provisioning (**MANUAL** — requires Elias action)
+6. **LCH-5** — Set up Discord community (**MANUAL**)
+7. **INT-6** — Submit OpenClaw skill to Skills Registry (**MANUAL** — requires OpenClaw account)
+
+---
+
+## Scheduled Task Run (2026-04-19): axip-sdk-typescript
+
+**Tasks:** SDK-1 (TypeScript types), SDK-2 (package.json updates), SDK-3 (Quickstart README)
+
+**Result: ✅ Already complete. No changes needed.**
+
+### What Was Checked
+
+- **Week 1 security hardening**: Confirmed ✅ complete (SEC-1 through SEC-8 per PROGRESS.md history) — proceeded with SDK work.
+- **SDK-1** (`packages/sdk/src/index.d.ts`): Already exists — 529 lines of complete TypeScript definitions covering `AXIPAgent`, `AXIPConnection`, `AXIPIdentity`, all message/payload types, `crypto` and `messages` namespaces with full method signatures.
+- **SDK-2** (`packages/sdk/package.json`): Already has `files: ["src/"]`, `engines: {node: ">=18.0.0"}`, `types: "src/index.d.ts"`, `license: "MIT"`, `repository: {type: "git", url: "https://github.com/elibot0395/axip"}`, and `description` — fully npm-publish ready.
+- **SDK-3** (`packages/sdk/README.md`): Already has one-line description, npm install command, ~20-line quickstart example (connect, discover, task lifecycle including bid/accept/result), and link to full docs at https://docs.axip.dev/sdk.
+
+| Task | File | Status |
+|------|------|--------|
+| SDK-1 | `packages/sdk/src/index.d.ts` | ✅ Complete (529 lines, all types) |
+| SDK-2 | `packages/sdk/package.json` | ✅ Complete (all required metadata) |
+| SDK-3 | `packages/sdk/README.md` | ✅ Complete (description + quickstart + docs link) |
+
+No implementation needed. This is the second consecutive run confirming SDK-1/SDK-2/SDK-3 completion (prior confirmation: 2026-04-18 run).
+
+### Remaining Manual Tasks
+
+1. **npm publish @axip/sdk** — `cd ~/axios-axip/packages/sdk && npm publish --access public` (SDK-5, MANUAL)
+2. **npm publish @axip/mcp-server** — after SDK-5 (MCP-7, MANUAL)
+3. **Create public GitHub repo** — github.com/axiosai/axip (SDK-6, MANUAL)
+4. **Launch execution** — Product Hunt, HN, blog post (MANUAL)
 
 ---
 
