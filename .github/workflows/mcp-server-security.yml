@@ -1,0 +1,97 @@
+name: mcp-server security
+
+on:
+  push:
+    branches: [main, 'v2/**']
+    paths: ['packages/mcp-server/**', '.github/workflows/mcp-server-security.yml']
+  pull_request:
+    paths: ['packages/mcp-server/**']
+  schedule:
+    # Daily re-scan so new CVEs on pinned deps fail the job even if code hasn't changed
+    - cron: '17 7 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  npm-audit:
+    name: npm audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install (prod deps only)
+        working-directory: packages/mcp-server
+        run: npm ci --omit=dev
+      - name: Audit
+        working-directory: packages/mcp-server
+        run: npm audit --audit-level=moderate
+
+  osv-scanner:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run OSV-Scanner
+        uses: google/osv-scanner-action/osv-scanner-action@v1
+        with:
+          scan-args: |-
+            --lockfile=packages/mcp-server/package-lock.json
+            --recursive
+
+  gitleaks:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  zod-strict-check:
+    name: verify Zod .strict() on tool schemas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Every tool schema in tools.js must call .strict() to reject unknown
+      # keys. This grep guard catches a regression where someone adds a new
+      # z.object without hardening it. False positives are allow-listed by
+      # inline comment: `// strict-ok: <reason>`.
+      - name: Grep guard
+        run: |
+          set -e
+          cd packages/mcp-server
+          echo "Checking src/tools.js and src/tools/ for un-stricted z.object..."
+          if grep -nE 'z\.object\(' src/tools.js src/tools/*.js 2>/dev/null | grep -v '\.strict()' | grep -v 'strict-ok:'; then
+            echo "::error::Found z.object() without .strict() — add .strict() or annotate with // strict-ok: <reason>"
+            exit 1
+          fi
+          echo "OK"
+
+  tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install workspace
+        run: |
+          # Install the SDK workspace dep first; mcp-server depends on it
+          cd packages/sdk && npm ci
+          cd ../mcp-server && npm ci
+      - name: Test
+        working-directory: packages/mcp-server
+        run: |
+          if [ -d test ]; then
+            node --test test/*.test.js
+          else
+            echo "No tests yet; skipping (will be required once test/ exists)"
+          fi
