@@ -24,7 +24,10 @@ import * as logger from './logger.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const WS_PORT = parseInt(process.env.AXIP_RELAY_PORT || '4200', 10);
+// PORT (Railway/Heroku convention) takes precedence over AXIP_RELAY_PORT
+// so the relay binds to whatever port the platform injects without
+// needing extra env vars.
+const WS_PORT = parseInt(process.env.PORT || process.env.AXIP_RELAY_PORT || '4200', 10);
 const WS_HOST = process.env.AXIP_RELAY_HOST || '127.0.0.1';
 const DASH_PORT = parseInt(process.env.AXIP_DASH_PORT || '4201', 10);
 const DASH_HOST = process.env.AXIP_DASH_HOST || '0.0.0.0';
