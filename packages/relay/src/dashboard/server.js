@@ -447,6 +447,33 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     }
   });
 
+  // v2 audits — newest first. Returns the full data_json blob so the
+  // portal can render report markdown + composites without a second
+  // round-trip.
+  app.get('/api/eli/assessments-v2', (req, res) => {
+    const db = getEliDb();
+    if (!db) return res.json([]);
+    try {
+      const rows = db.prepare(`
+        SELECT id, audit_uuid, client_name, industry, report_tier, status,
+               composite_top, tier_top, workflow_count, cost_usd,
+               total_input_tokens, total_output_tokens,
+               created_at, completed_at, data_json, __test_marker
+          FROM assessments_v2
+         WHERE status = 'complete'
+         ORDER BY id DESC
+         LIMIT 10
+      `).all();
+      res.json(rows.map(r => {
+        let data = null;
+        try { data = JSON.parse(r.data_json || 'null'); } catch { /* leave null */ }
+        return { ...r, data_json: undefined, data };
+      }));
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/eli/emails', (req, res) => {
     const db = getEliDb();
     if (!db) return res.json({ total: 0, breakdown: {} });

@@ -1699,6 +1699,48 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
 
     <!-- ─── Tab: Demo — Client Assessment Dashboard ──── -->
     <div id="tab-demo" class="tab-panel">
+
+      <!-- v2 Audit Panel — populated by JS; hidden if no v2 audits exist -->
+      <div id="admin-v2-audit" style="display:none; margin-bottom:24px;">
+        <div class="admin-card" style="border-left:3px solid #4caf50;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px;">
+            <div>
+              <div style="font-size:11px;color:#4caf50;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;">v2 AI Readiness Audit</div>
+              <div id="admin-v2-client" style="font-size:20px;font-weight:700;color:#fff;margin-top:4px;"></div>
+              <div id="admin-v2-industry" style="font-size:13px;color:#888;margin-top:2px;"></div>
+              <div id="admin-v2-meta" style="font-size:12px;color:#555;margin-top:4px;"></div>
+            </div>
+            <div style="text-align:right">
+              <div id="admin-v2-tier" style="display:inline-block;font-size:14px;font-weight:700;padding:4px 12px;border-radius:4px;"></div>
+              <div id="admin-v2-date" style="font-size:11px;color:#555;margin-top:6px;"></div>
+            </div>
+          </div>
+
+          <div class="admin-stats" id="admin-v2-stats">
+            <div class="admin-stat-card"><div class="value" id="admin-v2-workflows">0</div><div class="label">Workflows Scored</div></div>
+            <div class="admin-stat-card"><div class="value" id="admin-v2-composite-top">—</div><div class="label">Top Composite</div></div>
+            <div class="admin-stat-card"><div class="value" id="admin-v2-cost" style="color:#4caf50">$0.00</div><div class="label">LLM Cost</div></div>
+            <div class="admin-stat-card"><div class="value" id="admin-v2-tokens" style="color:#00bcd4">0</div><div class="label">Tokens (in/out)</div></div>
+          </div>
+
+          <h3 style="margin-top:20px;margin-bottom:8px;color:#fff;font-size:15px;">Scorecard</h3>
+          <div style="overflow-x:auto;">
+            <table style="font-size:13px;">
+              <thead>
+                <tr>
+                  <th>Workflow</th><th>Composite</th><th>Tier</th>
+                  <th>Data</th><th>Fit</th><th>Compl</th><th>Risk</th><th>ROI</th>
+                </tr>
+              </thead>
+              <tbody id="admin-v2-rows"></tbody>
+            </table>
+          </div>
+
+          <h3 style="margin-top:20px;margin-bottom:8px;color:#fff;font-size:15px;">Report</h3>
+          <div id="admin-v2-report" style="background:#0a0a0a;border:1px solid #1a1a1a;border-radius:6px;padding:20px;font-size:13px;line-height:1.7;color:#ccc;max-height:600px;overflow:auto;white-space:pre-wrap;font-family:ui-serif,Georgia,serif;"></div>
+        </div>
+      </div>
+
       <div id="admin-demo-empty">
         <div class="admin-empty" style="padding:40px">
           No completed assessments yet.<br>
@@ -2706,7 +2748,62 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
     // ─── ADMIN: Demo ──────────────────────────────────
     let adminCurrentAssessmentId = null;
 
+    // Render the latest v2 audit (8-dimension AI readiness) into its
+    // own panel above the v1 demo. Hidden if no v2 audits exist.
+    async function refreshV2Audit() {
+      const v2list = await adminFetchJson('/api/admin/eli/assessments-v2');
+      const panel = $admin('admin-v2-audit');
+      if (!v2list || !v2list.length) { if (panel) panel.style.display = 'none'; return; }
+      const a = v2list[0]; // newest
+      if (!panel || !a.data) return;
+      panel.style.display = 'block';
+
+      $admin('admin-v2-client').textContent = a.client_name + (a.__test_marker ? '  (DRY-RUN)' : '');
+      $admin('admin-v2-industry').textContent = a.industry || '';
+      $admin('admin-v2-meta').textContent = `Tier: ${a.report_tier}  ·  audit ${a.audit_uuid.slice(0, 8)}`;
+      $admin('admin-v2-date').textContent = a.completed_at || a.created_at;
+
+      const tierColors = { 'Quick Win':'#1b3a1b', 'Strategic Play':'#1b2a3a', 'Foundation First':'#3a2f1b', 'Not Ready':'#3a1b1b' };
+      const tierFg     = { 'Quick Win':'#4caf50', 'Strategic Play':'#2196f3', 'Foundation First':'#ff9800', 'Not Ready':'#f44336' };
+      const tEl = $admin('admin-v2-tier');
+      tEl.textContent = a.tier_top || '—';
+      tEl.style.background = tierColors[a.tier_top] || '#222';
+      tEl.style.color      = tierFg[a.tier_top] || '#aaa';
+
+      $admin('admin-v2-workflows').textContent = a.workflow_count;
+      $admin('admin-v2-composite-top').textContent = (a.composite_top != null) ? a.composite_top.toFixed(1) : '—';
+      $admin('admin-v2-cost').textContent = '$' + (a.cost_usd || 0).toFixed(4);
+      $admin('admin-v2-tokens').textContent = (a.total_input_tokens || 0).toLocaleString() + ' / ' + (a.total_output_tokens || 0).toLocaleString();
+
+      const composites = (a.data && a.data.composites) || [];
+      $admin('admin-v2-rows').innerHTML = composites
+        .slice().sort((x,y) => y.composite_score - x.composite_score)
+        .map(c => {
+          const fg = tierFg[c.tier] || '#aaa';
+          const s  = c.scores || {};
+          return `<tr>
+            <td><strong>${escapeHtml(c.workflow_name)}</strong></td>
+            <td><span style="color:${fg};font-weight:700">${c.composite_score.toFixed(1)}</span></td>
+            <td><span style="background:${tierColors[c.tier] || '#222'};color:${fg};padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600">${c.tier}</span></td>
+            <td>${s.data_readiness ?? '—'}</td>
+            <td>${s.ai_workflow_fit ?? '—'}</td>
+            <td>${s.implementation_complexity ?? '—'}</td>
+            <td>${s.ai_risk_ethics ?? '—'}</td>
+            <td>${s.roi_time_to_value ?? '—'}</td>
+          </tr>`;
+        }).join('');
+
+      // Report markdown — pre-wrap preserves headings/tables; not parsing to HTML to keep dep-light
+      const md = (a.data && a.data.report_markdown) || '';
+      $admin('admin-v2-report').textContent = md;
+    }
+
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
     async function refreshAdminDemo() {
+      // Always try v2 first; it renders independently of v1.
+      await refreshV2Audit().catch(err => console.warn('[v2 audit fetch]', err.message));
+
       const assessments = await adminFetchJson('/api/admin/assessment/list');
 
       const hasData = assessments && assessments.length > 0;
