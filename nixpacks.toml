@@ -1,0 +1,18 @@
+# Nixpacks build configuration for the AXIP monorepo on Railway.
+# Pins Node 22 (required by `engines.node` in package.json) and
+# ensures the build tools needed by better-sqlite3 are available.
+
+[phases.setup]
+nixPkgs = ['nodejs_22', 'python3', 'gcc', 'gnumake']
+
+[phases.install]
+cmds = ['npm install --workspaces --include-workspace-root']
+
+[phases.build]
+# No build step — the relay runs directly from src/. Skip the default
+# `npm run build` so the build doesn't fail looking for a script that
+# doesn't exist.
+cmds = ['echo "no build step — running from source"']
+
+[start]
+cmd = 'npm run relay'
