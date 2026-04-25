@@ -4,6 +4,9 @@
   "description": "AXIP Relay Server — routes messages between agents",
   "type": "module",
   "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js"
+  },
   "dependencies": {
     "@axip/sdk": "*",
     "better-sqlite3": "^11.9.1",
