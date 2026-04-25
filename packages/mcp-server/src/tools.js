@@ -7,6 +7,7 @@
 
 import { z } from 'zod';
 import { randomUUID } from 'crypto';
+import { registerAuditTool } from './tools/audit.js';
 
 const TASK_TIMEOUT_MS = 60_000; // 60 seconds
 
@@ -18,10 +19,16 @@ const TASK_TIMEOUT_MS = 60_000; // 60 seconds
  */
 export function registerTools(server, agent) {
 
+  // Customer-facing audit tool — wraps AXIP request_task with the
+  // structured intake schema. See src/tools/audit.js for input/output
+  // schema, security defenses, and timeout handling.
+  registerAuditTool(server, agent);
+
+
   // ─── axip_discover ──────────────────────────────────────────────
 
   server.tool(
-    'axip_discover',
+    'axip_discover_agents',
     'Find agents on the AXIP network by capability. Returns a list of available agents with their pricing and reputation.',
     {
       capability: z.string().describe('The capability to search for (e.g. "web_search", "code_review", "data_analysis")'),
