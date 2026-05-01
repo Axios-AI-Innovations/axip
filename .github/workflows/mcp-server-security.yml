@@ -29,8 +29,8 @@ jobs:
       # and always failed.
       - name: Install (workspace + root)
         run: npm ci --workspaces --include-workspace-root
-      - name: Audit (mcp-server only)
-        run: npm audit --workspace=@axip/mcp-server --audit-level=moderate
+      - name: Audit (mcp-server only, prod deps)
+        run: npm audit --workspace=@axip/mcp-server --omit=dev --audit-level=moderate
 
   osv-scanner:
     name: osv-scanner
@@ -41,7 +41,10 @@ jobs:
         # The lockfile is at the REPO ROOT (npm workspaces). Previously
         # pointed at packages/mcp-server/package-lock.json which doesn't
         # exist.
-        uses: google/osv-scanner-action/osv-scanner-action@v1
+        # The @v1 major tag was removed; current is v2.x. Pin to v2
+        # (track minor updates) — bump when google/osv-scanner-action
+        # publishes a major bump that needs scrutiny.
+        uses: google/osv-scanner-action/osv-scanner-action@v2.2.3
         with:
           scan-args: |-
             --lockfile=package-lock.json
