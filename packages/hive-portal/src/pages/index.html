@@ -849,6 +849,7 @@
     <a href="/status" target="_blank" style="color:#555;font-size:0.85rem;padding:12px 16px;text-decoration:none;white-space:nowrap;display:inline-flex;align-items:center;gap:4px;" id="nav-status-link"><span id="nav-status-dot" style="width:7px;height:7px;border-radius:50%;background:#555;display:inline-block;"></span>Status</a>
     <!--ADMIN_START-->
     <div class="nav-separator"></div>
+    <button data-tab="mission">Mission Control</button>
     <button data-tab="eli">Eli Operations</button>
     <button data-tab="axipadmin">AXIP Admin</button>
     <button data-tab="intelligence">Agent Intelligence</button>
@@ -1517,6 +1518,85 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
     <!-- ═══ ADMIN TABS ════════════════════════════════════ -->
     <!-- ═══════════════════════════════════════════════════ -->
 
+    <!-- ─── Tab: Mission Control ─────────────────────── -->
+    <div id="tab-mission" class="tab-panel">
+      <div id="mission-empty" class="admin-empty" style="display:none;">No state snapshot yet — run <code>node /Users/elias/eli-agent/scripts/eli-state.js</code></div>
+      <div id="mission-content">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <div style="font-size:12px;color:#666;">Source: <code>data/state/latest.json</code></div>
+          <div style="font-size:12px;color:#666;">Snapshot: <span id="mission-generated-at">—</span></div>
+        </div>
+
+        <!-- Top-line status badges -->
+        <div class="admin-stats" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
+          <div class="admin-stat-card"><div class="value" id="mission-pm2-online">—</div><div class="label">PM2 Online</div></div>
+          <div class="admin-stat-card"><div class="value" id="mission-repo-commits">—</div><div class="label">Commits Today (3 repos)</div></div>
+          <div class="admin-stat-card"><div class="value" id="mission-npm-downloads">—</div><div class="label">@axip/mcp-server / week</div></div>
+          <div class="admin-stat-card"><div class="value" id="mission-relay-status">—</div><div class="label">Relay HTTP</div></div>
+          <div class="admin-stat-card"><div class="value" id="mission-form-status">—</div><div class="label">Audit Intake Form</div></div>
+        </div>
+
+        <div class="admin-grid">
+          <div class="admin-card">
+            <h3>PM2 Health</h3>
+            <table><thead><tr><th>Process</th><th>Status</th><th>Restarts</th><th>Uptime</th></tr></thead>
+            <tbody id="mission-pm2-body"></tbody></table>
+          </div>
+
+          <div class="admin-card">
+            <h3>Repos (last 7d)</h3>
+            <table><thead><tr><th>Repo</th><th>Branch</th><th>Today</th><th>7d</th><th>Dirty</th></tr></thead>
+            <tbody id="mission-repos-body"></tbody></table>
+            <div id="mission-repo-heads" style="margin-top:8px;font-size:12px;color:#777;"></div>
+          </div>
+
+          <div class="admin-card">
+            <h3>DB Table Counts</h3>
+            <table><thead><tr><th>Table</th><th>Rows</th></tr></thead>
+            <tbody id="mission-db-body"></tbody></table>
+          </div>
+
+          <div class="admin-card">
+            <h3>Recent Telegram (last 10)</h3>
+            <table><thead><tr><th>When</th><th>Source</th><th>Len</th><th>Status</th></tr></thead>
+            <tbody id="mission-telegram-body"></tbody></table>
+          </div>
+
+          <div class="admin-card">
+            <h3>Recent Eli Outputs</h3>
+            <div id="mission-outputs-list"></div>
+          </div>
+
+          <div class="admin-card">
+            <h3>Known-Broken</h3>
+            <ul id="mission-broken-list" style="margin:0;padding-left:18px;color:#f44336;font-size:13px;line-height:1.7;"></ul>
+          </div>
+
+          <div class="admin-card full">
+            <h3>Service Endpoints</h3>
+            <table><thead><tr><th>Service</th><th>URL</th><th>HTTP</th><th>Notes</th></tr></thead>
+            <tbody id="mission-endpoints-body"></tbody></table>
+          </div>
+
+          <div class="admin-card full">
+            <h3>Claude Handoff — Gotchas &amp; Rules</h3>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+              <div>
+                <h4 style="color:#ff9800;font-size:13px;margin:0 0 6px 0;">Gotchas</h4>
+                <ul id="mission-gotchas" style="margin:0;padding-left:18px;color:#bbb;font-size:12px;line-height:1.6;"></ul>
+              </div>
+              <div>
+                <h4 style="color:#f44336;font-size:13px;margin:0 0 6px 0;">Never Do</h4>
+                <ul id="mission-never-do" style="margin:0;padding-left:18px;color:#bbb;font-size:12px;line-height:1.6;"></ul>
+              </div>
+            </div>
+            <h4 style="color:#4caf50;font-size:13px;margin:14px 0 6px 0;">Currently True (vs older docs)</h4>
+            <ul id="mission-currently-true" style="margin:0;padding-left:18px;color:#bbb;font-size:12px;line-height:1.6;"></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ─── Tab: Eli Operations ──────────────────────── -->
     <div id="tab-eli" class="tab-panel">
 
@@ -1872,6 +1952,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         if (t === 'marketplace') fetchMarketplace();
         if (t === 'leaderboard') { fetchLeaderboard(); fetchStatsTimeline(); }
         // Admin tabs
+        if (t === 'mission') refreshMissionControl();
         if (t === 'eli') refreshAdminEli();
         if (t === 'axipadmin') refreshAdminAXIP();
         if (t === 'intelligence') fetchIntelligence();
@@ -3028,6 +3109,156 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
       }
     }
 
+    // ─── ADMIN: Mission Control ───────────────────────
+    function fmtUptime(ms) {
+      if (ms == null) return '—';
+      const s = Math.floor(ms / 1000);
+      if (s < 60) return s + 's';
+      const m = Math.floor(s / 60);
+      if (m < 60) return m + 'm';
+      const h = Math.floor(m / 60);
+      if (h < 24) return h + 'h ' + (m % 60) + 'm';
+      const d = Math.floor(h / 24);
+      return d + 'd ' + (h % 24) + 'h';
+    }
+
+    async function refreshMissionControl() {
+      const empty = $admin('mission-empty');
+      const content = $admin('mission-content');
+      const state = await adminFetchJson('/api/admin/eli/state');
+      if (!state || state.error) {
+        empty.style.display = 'block';
+        content.style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      $admin('mission-generated-at').textContent = state.generated_at
+        ? `${new Date(state.generated_at).toLocaleString()} (${timeAgo(state.generated_at)})`
+        : '—';
+
+      // Top-line stats
+      const pm2 = state.pm2 || [];
+      const online = pm2.filter(p => p.status === 'online').length;
+      $admin('mission-pm2-online').textContent = `${online}/${pm2.length}`;
+
+      const repos = state.repos || {};
+      const totalToday = Object.values(repos).reduce((s, r) => s + (r.commits_today || 0), 0);
+      $admin('mission-repo-commits').textContent = totalToday;
+
+      const npmEntry = state.npm?.['@axip/mcp-server'];
+      $admin('mission-npm-downloads').textContent = npmEntry ? (npmEntry.downloads_last_week ?? '—') : '—';
+
+      const relayHttp = state.relay?.http_status;
+      $admin('mission-relay-status').textContent = relayHttp != null ? relayHttp : '—';
+      const formHttp = state.intake_form?.http_status;
+      $admin('mission-form-status').textContent = formHttp != null ? formHttp : '—';
+
+      // PM2
+      const pm2Body = $admin('mission-pm2-body');
+      if (pm2.length === 0) {
+        pm2Body.innerHTML = adminEmptyRow(4, 'No PM2 data');
+      } else {
+        pm2Body.innerHTML = pm2.map(p => {
+          const cls = p.status === 'online' ? 'badge-online' : 'badge-offline';
+          const restartCls = p.restarts > 5 ? 'style="color:#ff9800;"' : '';
+          return `<tr><td>${esc(p.name)}</td><td><span class="badge ${cls}">${esc(p.status)}</span></td><td ${restartCls}>${p.restarts ?? 0}</td><td>${fmtUptime(p.uptime_ms)}</td></tr>`;
+        }).join('');
+      }
+
+      // Repos
+      const repoBody = $admin('mission-repos-body');
+      const repoEntries = Object.entries(repos);
+      if (repoEntries.length === 0) {
+        repoBody.innerHTML = adminEmptyRow(5, 'No repo data');
+      } else {
+        repoBody.innerHTML = repoEntries.map(([name, r]) => {
+          const dirty = r.dirty
+            ? '<span class="badge badge-warn">dirty</span>'
+            : '<span class="badge badge-success">clean</span>';
+          return `<tr><td>${esc(name)}</td><td style="font-size:12px;color:#aaa;">${esc(r.branch || '?')}</td><td>${r.commits_today ?? 0}</td><td>${r.commits_7d ?? 0}</td><td>${dirty}</td></tr>`;
+        }).join('');
+      }
+      $admin('mission-repo-heads').innerHTML = repoEntries.map(([name, r]) =>
+        `<div><strong style="color:#aaa;">${esc(name)}</strong>: <code style="color:#666;">${esc((r.head || '').slice(0, 8))}</code> ${esc(r.head_subject || '')}</div>`
+      ).join('');
+
+      // DB
+      const dbBody = $admin('mission-db-body');
+      const dbCounts = state.db_table_counts || {};
+      const dbEntries = Object.entries(dbCounts).sort((a, b) => b[1] - a[1]);
+      if (dbEntries.length === 0) {
+        dbBody.innerHTML = adminEmptyRow(2, 'No DB counts');
+      } else {
+        dbBody.innerHTML = dbEntries.map(([k, v]) =>
+          `<tr><td style="font-size:12px;">${esc(k)}</td><td>${v}</td></tr>`
+        ).join('');
+      }
+
+      // Telegram
+      const tgBody = $admin('mission-telegram-body');
+      const tg = state.last_telegram || [];
+      if (tg.length === 0) {
+        tgBody.innerHTML = adminEmptyRow(4, 'No telegram messages');
+      } else {
+        tgBody.innerHTML = tg.map(m =>
+          `<tr><td style="font-size:12px;color:#aaa;">${timeAgo(m.created_at)}</td><td style="font-size:12px;">${esc(m.source || '?')}</td><td>${m.length ?? 0}</td><td>${statusBadge(m.status || '?')}</td></tr>`
+        ).join('');
+      }
+
+      // Eli outputs
+      const outList = $admin('mission-outputs-list');
+      const outs = state.recent_eli_outputs || [];
+      if (outs.length === 0) {
+        outList.innerHTML = '<div class="admin-empty">No recent outputs</div>';
+      } else {
+        outList.innerHTML = outs.map(o => `
+          <div class="admin-activity-item">
+            <span class="admin-activity-skill">${esc(o.skill || '?')}</span>
+            <span class="admin-activity-summary">${esc((o.output_summary || '').slice(0, 140))}</span>
+            <span class="admin-activity-time">${timeAgo(o.created_at)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Known broken
+      const brokenList = $admin('mission-broken-list');
+      const broken = state.known_broken || [];
+      brokenList.innerHTML = broken.length === 0
+        ? '<li style="color:#4caf50;list-style:none;">None reported</li>'
+        : broken.map(b => `<li>${esc(b)}</li>`).join('');
+
+      // Endpoints
+      const epBody = $admin('mission-endpoints-body');
+      const eps = [];
+      if (state.relay) {
+        eps.push({ service: 'AXIP Relay', url: state.relay.url, http: state.relay.http_status, notes: state.relay.tls_subject ? 'TLS: ' + state.relay.tls_subject : '' });
+      }
+      if (state.intake_form) {
+        eps.push({ service: 'Audit Intake Form', url: state.intake_form.url, http: state.intake_form.http_status, notes: '' });
+      }
+      if (npmEntry) {
+        eps.push({ service: '@axip/mcp-server', url: 'https://www.npmjs.com/package/@axip/mcp-server', http: 'v' + npmEntry.latest, notes: (npmEntry.downloads_last_week ?? 0) + ' dl/wk' });
+      }
+      epBody.innerHTML = eps.length === 0
+        ? adminEmptyRow(4, 'No endpoint data')
+        : eps.map(e =>
+          `<tr><td>${esc(e.service)}</td><td><a href="${esc(e.url || '#')}" target="_blank" style="color:#00bcd4;font-size:12px;">${esc(e.url || '—')}</a></td><td>${esc(String(e.http ?? '—'))}</td><td style="font-size:12px;color:#888;">${esc(e.notes)}</td></tr>`
+        ).join('');
+
+      // Handoff
+      const handoff = state.__claude_handoff || {};
+      const renderUL = (id, items) => {
+        const el = $admin(id);
+        if (!el) return;
+        el.innerHTML = (items && items.length) ? items.map(s => `<li>${esc(s)}</li>`).join('') : '<li style="color:#555;">—</li>';
+      };
+      renderUL('mission-gotchas', handoff.gotchas);
+      renderUL('mission-never-do', handoff.never_do_rules);
+      renderUL('mission-currently-true', handoff.what_is_currently_true_vs_doc_claims);
+    }
+
     // ─── Auto-refresh ─────────────────────────────────
     let publicTimer = null;
     let adminTimer = null;
@@ -3049,6 +3280,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         const activeTab = document.querySelector('.nav button.active');
         if (!activeTab) return;
         const t = activeTab.dataset.tab;
+        if (t === 'mission') refreshMissionControl();
         if (t === 'eli') refreshAdminEli();
         if (t === 'axipadmin') refreshAdminAXIP();
       }, 5000);

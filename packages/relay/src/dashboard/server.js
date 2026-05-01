@@ -534,6 +534,21 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     });
   });
 
+  // Mission Control — full state snapshot from /Users/elias/eli-agent/data/state/latest.json
+  const ELI_STATE_PATH = '/Users/elias/eli-agent/data/state/latest.json';
+  app.get('/api/eli/state', (req, res) => {
+    try {
+      if (!existsSync(ELI_STATE_PATH)) {
+        return res.status(404).json({ error: 'state snapshot not found', path: ELI_STATE_PATH });
+      }
+      const raw = readFileSync(ELI_STATE_PATH, 'utf-8');
+      const data = JSON.parse(raw);
+      res.json(data);
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // ─── Assessment Demo API Endpoints ──────────────────────
 
   app.get('/api/assessment/list', (req, res) => {
