@@ -74,7 +74,7 @@ export const AuditCompanyInputSchema = z.object({
 // What we expect back from Eli through the relay. If Eli returns
 // something that doesn't match, we fail closed.
 
-const CompositeSchema = z.object({
+const CompositeSchema = z.object({ // strict-ok: passthrough on worker output for forward-compat with future score fields
   workflow_name:   z.string(),
   composite_score: z.number(),
   base_tier:       z.string(),
@@ -82,7 +82,7 @@ const CompositeSchema = z.object({
   scores:          z.record(z.string(), z.number()),
 }).passthrough();
 
-const AuditOutputSchema = z.object({
+const AuditOutputSchema = z.object({ // strict-ok: passthrough on worker output for forward-compat with future report fields
   audit_id:        z.string(),
   report_tier:     z.string(),
   composites:      z.array(CompositeSchema),

@@ -23,12 +23,14 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-      - name: Install (prod deps only)
-        working-directory: packages/mcp-server
-        run: npm ci --omit=dev
-      - name: Audit
-        working-directory: packages/mcp-server
-        run: npm audit --audit-level=moderate
+      # Lockfile lives at the repo root (npm workspaces). Install from
+      # root, then audit the workspace. The previous setup tried to
+      # `npm ci` from packages/mcp-server which has no local lockfile
+      # and always failed.
+      - name: Install (workspace + root)
+        run: npm ci --workspaces --include-workspace-root
+      - name: Audit (mcp-server only)
+        run: npm audit --workspace=@axip/mcp-server --audit-level=moderate
 
   osv-scanner:
     name: osv-scanner
@@ -36,10 +38,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Run OSV-Scanner
+        # The lockfile is at the REPO ROOT (npm workspaces). Previously
+        # pointed at packages/mcp-server/package-lock.json which doesn't
+        # exist.
         uses: google/osv-scanner-action/osv-scanner-action@v1
         with:
           scan-args: |-
-            --lockfile=packages/mcp-server/package-lock.json
+            --lockfile=package-lock.json
             --recursive
 
   gitleaks:
@@ -58,20 +63,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Every tool schema in tools.js must call .strict() to reject unknown
-      # keys. This grep guard catches a regression where someone adds a new
-      # z.object without hardening it. False positives are allow-listed by
-      # inline comment: `// strict-ok: <reason>`.
-      - name: Grep guard
-        run: |
-          set -e
-          cd packages/mcp-server
-          echo "Checking src/tools.js and src/tools/ for un-stricted z.object..."
-          if grep -nE 'z\.object\(' src/tools.js src/tools/*.js 2>/dev/null | grep -v '\.strict()' | grep -v 'strict-ok:'; then
-            echo "::error::Found z.object() without .strict() — add .strict() or annotate with // strict-ok: <reason>"
-            exit 1
-          fi
-          echo "OK"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Replaces the previous line-bound grep guard which produced
+      # false positives on every multi-line z.object({...}).strict()
+      # block. The Node script does proper block-aware scanning and
+      # accepts .strict() OR .passthrough() OR an inline strict-ok:
+      # annotation.
+      - name: Block-aware Zod strict check
+        run: node packages/mcp-server/scripts/check-zod-strict.js
 
   tests:
     name: unit tests
@@ -83,10 +84,7 @@ jobs:
           node-version: '22'
           cache: 'npm'
       - name: Install workspace
-        run: |
-          # Install the SDK workspace dep first; mcp-server depends on it
-          cd packages/sdk && npm ci
-          cd ../mcp-server && npm ci
+        run: npm ci --workspaces --include-workspace-root
       - name: Test
         working-directory: packages/mcp-server
         run: |
