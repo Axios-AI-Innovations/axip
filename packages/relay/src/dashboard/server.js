@@ -474,6 +474,67 @@ export function startDashboard(port = 4201, host = '127.0.0.1', manifest = {}) {
     }
   });
 
+  // ── /api/cluster/topology ──────────────────────────────────────
+  // Returns the live AXIP-cluster view: every node that has reported
+  // metrics, with its most recent observation. The shape is designed
+  // to drive both the Hive-portal Mission-Control "Cluster" tab AND
+  // the public axiosaiinnovations.com/cluster page.
+  app.get('/api/cluster/topology', (req, res) => {
+    const db = getEliDb();
+    if (!db) return res.json({ nodes: [], generated_at: new Date().toISOString() });
+    try {
+      const nodes = db.prepare(`
+        SELECT n.id, n.node_id, n.display_name, n.hostname, n.os, n.cpu_brand,
+               n.cpu_cores, n.ram_gb, n.network_role, n.primary_model,
+               n.capabilities, n.status, n.first_seen, n.last_seen,
+               m.observed_at AS metrics_at,
+               m.tokens_per_sec_recent, m.llm_calls_last_hour, m.avg_call_duration_ms,
+               m.cpu_pct, m.load_avg_1m, m.ram_used_gb, m.ram_free_gb, m.thermal_state,
+               m.rtt_to_relay_ms, m.rtt_to_lan_peer_ms, m.uplink_kbps_estimate,
+               m.model_loaded, m.context_window_used, m.active_concurrency
+          FROM cluster_nodes n
+     LEFT JOIN cluster_node_metrics m ON m.id = n.last_metrics_id
+         ORDER BY n.last_seen DESC
+      `).all();
+      // Mark stale: any node with last_seen >5 min ago becomes 'degraded' for display purposes.
+      const now = Date.now();
+      for (const n of nodes) {
+        const ageMs = now - new Date(n.last_seen).getTime();
+        if (ageMs > 5 * 60 * 1000 && n.status === 'online') n.status = 'degraded';
+        if (ageMs > 30 * 60 * 1000) n.status = 'offline';
+        try { n.capabilities = JSON.parse(n.capabilities || '[]'); } catch { n.capabilities = []; }
+      }
+      res.json({
+        nodes,
+        generated_at: new Date().toISOString(),
+        node_count: nodes.length,
+        online_count: nodes.filter(n => n.status === 'online').length,
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // Time-series for one node — used by Mission-Control sparklines and
+  // the public /cluster page when the user clicks on a node.
+  app.get('/api/cluster/node/:nodeId/metrics', (req, res) => {
+    const db = getEliDb();
+    if (!db) return res.json([]);
+    const limit = Math.min(parseInt(req.query.limit, 10) || 60, 1440); // max 24h at 1-min cadence
+    try {
+      const rows = db.prepare(`
+        SELECT observed_at, tokens_per_sec_recent, cpu_pct, ram_used_gb,
+               rtt_to_relay_ms, thermal_state, model_loaded, active_concurrency
+          FROM cluster_node_metrics
+         WHERE node_id = ?
+         ORDER BY id DESC LIMIT ?
+      `).all(req.params.nodeId, limit);
+      res.json(rows.reverse()); // chronological for charting
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   app.get('/api/eli/emails', (req, res) => {
     const db = getEliDb();
     if (!db) return res.json({ total: 0, breakdown: {} });

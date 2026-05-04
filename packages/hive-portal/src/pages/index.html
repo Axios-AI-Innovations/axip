@@ -850,6 +850,7 @@
     <!--ADMIN_START-->
     <div class="nav-separator"></div>
     <button data-tab="mission">Mission Control</button>
+    <button data-tab="cluster">Cluster</button>
     <button data-tab="eli">Eli Operations</button>
     <button data-tab="axipadmin">AXIP Admin</button>
     <button data-tab="intelligence">Agent Intelligence</button>
@@ -1597,6 +1598,37 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
       </div>
     </div>
 
+    <!-- ─── Tab: Cluster ─────────────────────────────── -->
+    <div id="tab-cluster" class="tab-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div style="font-size:13px;color:#999;">
+          AXIP-coordinated Mac AI cluster — every node self-reports throughput, thermal, and network position every 60s.
+        </div>
+        <div style="font-size:12px;color:#666;">Topology refresh: <span id="cluster-refresh-at">—</span></div>
+      </div>
+
+      <div class="admin-stats" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));">
+        <div class="admin-stat-card"><div class="value" id="cluster-nodes-online">—</div><div class="label">Nodes Online</div></div>
+        <div class="admin-stat-card"><div class="value" id="cluster-tokens-aggregate">—</div><div class="label">Aggregate tok/s</div></div>
+        <div class="admin-stat-card"><div class="value" id="cluster-llm-calls-hour">—</div><div class="label">LLM Calls / hour</div></div>
+        <div class="admin-stat-card"><div class="value" id="cluster-thermal-worst">—</div><div class="label">Worst Thermal</div></div>
+        <div class="admin-stat-card"><div class="value" id="cluster-rtt-best">—</div><div class="label">Best RTT to Relay</div></div>
+      </div>
+
+      <div id="cluster-empty" class="admin-empty" style="display:none;">No nodes have reported yet. Eli emits a row every minute via <code>cluster-self-monitor</code>.</div>
+
+      <div id="cluster-nodes-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:14px;margin-top:14px;"></div>
+
+      <div class="admin-card full" style="margin-top:18px;">
+        <h3>Why this exists</h3>
+        <div style="font-size:12px;color:#999;line-height:1.7;">
+          NetworkChuck demonstrated that stacking Macs to run 70B-class models drops throughput from ~45 tok/s solo to ~5 tok/s clustered — the network layer between hosts serializes hidden states and chokes llama.cpp RPC.
+          AXIP's job here is the coordination plane: each Mac self-profiles (real probes, no fakes), the relay aggregates, and routing decisions can take CPU/thermal/RTT into account instead of pretending hosts are interchangeable.
+          This page is the framework for one node today; adding peers is mechanical from here.
+        </div>
+      </div>
+    </div>
+
     <!-- ─── Tab: Eli Operations ──────────────────────── -->
     <div id="tab-eli" class="tab-panel">
 
@@ -1953,6 +1985,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         if (t === 'leaderboard') { fetchLeaderboard(); fetchStatsTimeline(); }
         // Admin tabs
         if (t === 'mission') refreshMissionControl();
+        if (t === 'cluster') refreshClusterTopology();
         if (t === 'eli') refreshAdminEli();
         if (t === 'axipadmin') refreshAdminAXIP();
         if (t === 'intelligence') fetchIntelligence();
@@ -3259,6 +3292,136 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
       renderUL('mission-currently-true', handoff.what_is_currently_true_vs_doc_claims);
     }
 
+    // ─── Cluster Topology ─────────────────────────────
+    function fmtNum(n, digits) {
+      if (n == null || !Number.isFinite(n)) return '—';
+      return digits != null ? Number(n).toFixed(digits) : Number(n).toLocaleString();
+    }
+    function clusterStatusColor(status) {
+      if (status === 'online') return '#4caf50';
+      if (status === 'degraded') return '#ff9800';
+      if (status === 'offline') return '#f44336';
+      return '#666';
+    }
+    function thermalColor(state) {
+      if (state === 'nominal') return '#4caf50';
+      if (state === 'fair') return '#cddc39';
+      if (state === 'serious') return '#ff9800';
+      if (state === 'critical') return '#f44336';
+      return '#666';
+    }
+    function networkRoleLabel(role) {
+      switch (role) {
+        case 'datacenter-or-fiber': return '🛰 Datacenter / fiber';
+        case 'home-lan': return '🏠 Home LAN';
+        case 'home-wifi': return '📶 Home Wi-Fi';
+        case 'slow-remote': return '🐢 Slow remote';
+        default: return '❓ Unknown';
+      }
+    }
+    function fmtAge(iso) {
+      if (!iso) return '—';
+      const ms = Date.now() - new Date(iso).getTime();
+      if (ms < 0) return 'just now';
+      if (ms < 60_000) return Math.floor(ms / 1000) + 's ago';
+      if (ms < 3_600_000) return Math.floor(ms / 60_000) + 'm ago';
+      if (ms < 86_400_000) return Math.floor(ms / 3_600_000) + 'h ago';
+      return Math.floor(ms / 86_400_000) + 'd ago';
+    }
+
+    async function refreshClusterTopology() {
+      const data = await adminFetchJson('/api/admin/cluster/topology');
+      const empty = $admin('cluster-empty');
+      const grid = $admin('cluster-nodes-grid');
+      const refreshAt = $admin('cluster-refresh-at');
+      if (refreshAt) refreshAt.textContent = new Date().toLocaleTimeString();
+
+      if (!data || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+        if (empty) empty.style.display = 'block';
+        if (grid) grid.innerHTML = '';
+        $admin('cluster-nodes-online').textContent = '0';
+        $admin('cluster-tokens-aggregate').textContent = '—';
+        $admin('cluster-llm-calls-hour').textContent = '—';
+        $admin('cluster-thermal-worst').textContent = '—';
+        $admin('cluster-rtt-best').textContent = '—';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+
+      const nodes = data.nodes;
+      const online = nodes.filter(n => n.status === 'online');
+      const aggTok = nodes.reduce((s, n) => s + (Number.isFinite(n.tokens_per_sec_recent) ? n.tokens_per_sec_recent : 0), 0);
+      const aggCalls = nodes.reduce((s, n) => s + (n.llm_calls_last_hour || 0), 0);
+      const thermalRank = { 'nominal': 0, 'fair': 1, 'serious': 2, 'critical': 3 };
+      let worstTherm = null;
+      for (const n of nodes) {
+        const t = n.thermal_state;
+        if (t == null || t === 'unknown') continue;
+        if (worstTherm == null || (thermalRank[t] ?? -1) > (thermalRank[worstTherm] ?? -1)) worstTherm = t;
+      }
+      const rtts = nodes.map(n => n.rtt_to_relay_ms).filter(v => Number.isFinite(v));
+      const bestRtt = rtts.length ? Math.min(...rtts) : null;
+
+      $admin('cluster-nodes-online').textContent = online.length + '/' + nodes.length;
+      $admin('cluster-tokens-aggregate').textContent = aggTok ? fmtNum(aggTok, 1) : '—';
+      $admin('cluster-llm-calls-hour').textContent = aggCalls;
+      const wtSpan = $admin('cluster-thermal-worst');
+      wtSpan.textContent = worstTherm || '—';
+      wtSpan.style.color = worstTherm ? thermalColor(worstTherm) : '';
+      $admin('cluster-rtt-best').textContent = bestRtt != null ? bestRtt + 'ms' : '—';
+
+      grid.innerHTML = nodes.map(n => {
+        const dot = clusterStatusColor(n.status);
+        const therm = n.thermal_state || 'unknown';
+        const tCol = thermalColor(therm);
+        const caps = (() => {
+          try { return Array.isArray(n.capabilities) ? n.capabilities : JSON.parse(n.capabilities || '[]'); }
+          catch { return []; }
+        })();
+        const tokVal = Number.isFinite(n.tokens_per_sec_recent) ? fmtNum(n.tokens_per_sec_recent, 1) + ' tok/s' : '— tok/s';
+        const cpuVal = Number.isFinite(n.cpu_pct) ? fmtNum(n.cpu_pct, 1) + '%' : '—';
+        const ramUsed = Number.isFinite(n.ram_used_gb) ? fmtNum(n.ram_used_gb, 1) : '—';
+        const ramTot = n.ram_gb || '—';
+        const rtt = Number.isFinite(n.rtt_to_relay_ms) ? n.rtt_to_relay_ms + 'ms' : '—';
+        return `
+          <div class="admin-card" style="margin:0;">
+            <div style="display:flex;justify-content:space-between;align-items:start;margin-bottom:10px;">
+              <div>
+                <div style="font-size:15px;font-weight:600;color:#fff;">${n.display_name || n.node_id}</div>
+                <div style="font-size:11px;color:#666;font-family:monospace;">${n.node_id}</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:${dot};">
+                  <span style="width:8px;height:8px;border-radius:50%;background:${dot};"></span>
+                  ${n.status || 'unknown'}
+                </span>
+                <div style="font-size:10px;color:#666;margin-top:2px;">${fmtAge(n.last_seen)}</div>
+              </div>
+            </div>
+            <div style="font-size:12px;color:#999;margin-bottom:10px;line-height:1.6;">
+              <div>${n.cpu_brand || '—'} · ${n.cpu_cores || '?'} cores · ${ramTot}GB</div>
+              <div>${n.os || ''}</div>
+              <div style="margin-top:4px;">${networkRoleLabel(n.network_role)}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px;">
+              <div><span style="color:#666;">Throughput:</span> <span style="color:#00bcd4;font-weight:600;">${tokVal}</span></div>
+              <div><span style="color:#666;">CPU:</span> <span style="color:#fff;">${cpuVal}</span></div>
+              <div><span style="color:#666;">RAM:</span> <span style="color:#fff;">${ramUsed}/${ramTot}GB</span></div>
+              <div><span style="color:#666;">Load:</span> <span style="color:#fff;">${Number.isFinite(n.load_avg_1m) ? fmtNum(n.load_avg_1m, 2) : '—'}</span></div>
+              <div><span style="color:#666;">Thermal:</span> <span style="color:${tCol};font-weight:600;">${therm}</span></div>
+              <div><span style="color:#666;">RTT relay:</span> <span style="color:#fff;">${rtt}</span></div>
+              <div><span style="color:#666;">Calls/hr:</span> <span style="color:#fff;">${n.llm_calls_last_hour ?? 0}</span></div>
+              <div><span style="color:#666;">In-flight:</span> <span style="color:#fff;">${n.active_concurrency ?? 0}</span></div>
+            </div>
+            <div style="font-size:11px;color:#777;border-top:1px solid #222;padding-top:8px;">
+              <div><span style="color:#555;">Model loaded:</span> <span style="color:#aaa;font-family:monospace;">${n.model_loaded || n.primary_model || 'none'}</span></div>
+              ${caps.length ? `<div style="margin-top:4px;"><span style="color:#555;">Capabilities:</span> ${caps.map(c => `<span style="display:inline-block;background:#1a1a1a;border:1px solid #2a2a2a;border-radius:3px;padding:1px 6px;margin:2px 2px 0 0;font-size:10px;color:#bbb;">${c}</span>`).join('')}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
     // ─── Auto-refresh ─────────────────────────────────
     let publicTimer = null;
     let adminTimer = null;
@@ -3281,6 +3444,7 @@ result = Runner.run_sync(agent, "Translate 'Hello' to French and Spanish")</div>
         if (!activeTab) return;
         const t = activeTab.dataset.tab;
         if (t === 'mission') refreshMissionControl();
+        if (t === 'cluster') refreshClusterTopology();
         if (t === 'eli') refreshAdminEli();
         if (t === 'axipadmin') refreshAdminAXIP();
       }, 5000);
