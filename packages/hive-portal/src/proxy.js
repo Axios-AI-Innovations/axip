@@ -43,6 +43,32 @@ export async function relayFetch(path) {
 }
 
 /**
+ * Fetch a path from the relay API — raw pass-through (no sanitization).
+ * Used for admin proxy routes where the full relay response is needed.
+ *
+ * @param {string} path - API path (e.g., '/api/agents')
+ * @returns {Promise<Object|null>}
+ */
+export async function relayFetchRaw(path) {
+  try {
+    const res = await fetch(`${RELAY_API}${path}`, {
+      headers: { 'Accept': 'application/json' },
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!res.ok) {
+      console.warn(`[hive-portal] Relay returned ${res.status} for ${path} (raw)`);
+      return null;
+    }
+
+    return await res.json();
+  } catch (err) {
+    console.warn(`[hive-portal] Relay raw fetch failed for ${path}: ${err.message}`);
+    return null;
+  }
+}
+
+/**
  * Sanitize agent data for public consumption.
  * Strips: agent_id hashes, public keys, balances, internal metadata.
  *
@@ -59,7 +85,8 @@ export function sanitizeAgent(agent) {
     node_type: agent.metadata?.node_type || null,
     runtime: agent.metadata?.runtime || null,
     mission_aligned: agent.metadata?.mission_aligned || false,
-    connected_at: agent.connected_at || null
+    connected_at: agent.connected_at || null,
+    pricing: agent.pricing || null
   };
 }
 
