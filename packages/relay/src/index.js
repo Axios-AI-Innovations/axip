@@ -84,6 +84,7 @@ async function main() {
   // 4. Dashboard (non-fatal)
   try {
     startDashboard(DASH_PORT, DASH_HOST, manifest);
+    console.log(`[relay] Admin dashboard listening on http://${DASH_HOST}:${DASH_PORT} (AXIP_DASH_HOST=${process.env.AXIP_DASH_HOST || '<unset>'})`);
     logger.info('relay', 'Admin dashboard online', { url: `http://${DASH_HOST}:${DASH_PORT}` });
   } catch (err) {
     logger.warn('relay', 'Dashboard failed', { error: err.message });
