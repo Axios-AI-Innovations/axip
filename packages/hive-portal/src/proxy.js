@@ -14,7 +14,19 @@ const __dirname = dirname(__filename);
 const PROJECT_ROOT = join(__dirname, '..');
 
 const config = JSON.parse(readFileSync(join(PROJECT_ROOT, 'config', 'default.json'), 'utf-8'));
-const RELAY_API = config.relay.api_url;
+const RELAY_API = process.env.AXIP_RELAY_API_URL || config.relay.api_url;
+
+// Startup diagnostic — print resolved DNS + Node DNS order so we can see what's happening
+console.log(`[proxy] RELAY_API=${RELAY_API}`);
+console.log(`[proxy] NODE_OPTIONS=${process.env.NODE_OPTIONS || '<unset>'}`);
+try {
+  const url = new URL(RELAY_API);
+  const dns = await import('dns/promises');
+  const records = await dns.lookup(url.hostname, { all: true });
+  console.log(`[proxy] DNS lookup for ${url.hostname}:`, JSON.stringify(records));
+} catch (err) {
+  console.log(`[proxy] DNS lookup failed: ${err.message}`);
+}
 
 /**
  * Fetch a path from the relay API.
@@ -37,7 +49,8 @@ export async function relayFetch(path) {
 
     return await res.json();
   } catch (err) {
-    console.warn(`[hive-portal] Relay fetch failed for ${path}: ${err.message}`);
+    const cause = err.cause ? ` (cause: ${err.cause.code || err.cause.message || JSON.stringify(err.cause)})` : '';
+    console.warn(`[hive-portal] Relay fetch failed for ${path}: ${err.message}${cause}`);
     return null;
   }
 }
