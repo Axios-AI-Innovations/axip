@@ -20,6 +20,10 @@ const PROJECT_ROOT = join(__dirname, '..');
 
 const config = JSON.parse(readFileSync(join(PROJECT_ROOT, 'config', 'default.json'), 'utf-8'));
 
+// Env var overrides (mirror of index.js — keep in sync)
+if (process.env.SQLITE_PATH !== undefined) config.databases.sqlite_path = process.env.SQLITE_PATH || null;
+if (process.env.DATABASE_URL !== undefined) config.databases.brain_url = process.env.DATABASE_URL || null;
+
 let sqliteDb = null;
 let pgPool = null;
 

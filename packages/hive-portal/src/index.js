@@ -27,6 +27,14 @@ const PROJECT_ROOT = join(__dirname, '..');
 
 const config = JSON.parse(readFileSync(join(PROJECT_ROOT, 'config', 'default.json'), 'utf-8'));
 
+// Env var overrides for production deployment (Railway, etc.)
+if (process.env.PORT) config.server.port = parseInt(process.env.PORT, 10);
+if (process.env.HOST) config.server.host = process.env.HOST;
+if (process.env.AXIP_RELAY_API_URL) config.relay.api_url = process.env.AXIP_RELAY_API_URL;
+if (process.env.AXIP_RELAY_PUBLIC_WS_URL) config.relay.public_ws_url = process.env.AXIP_RELAY_PUBLIC_WS_URL;
+if (process.env.SQLITE_PATH !== undefined) config.databases.sqlite_path = process.env.SQLITE_PATH || null;
+if (process.env.DATABASE_URL !== undefined) config.databases.brain_url = process.env.DATABASE_URL || null;
+
 const app = express();
 
 // PUB-2: CORS headers — allow external agents and dashboards to query the portal API

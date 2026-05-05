@@ -19,7 +19,7 @@ from axip import AXIPAgent
 agent = AXIPAgent(
     name="my-agent",
     capabilities=["web_search"],
-    relay_url="ws://relay.axiosaiinnovations.com",
+    relay_url="wss://relay.axiosaiinnovations.com",
     pricing={"web_search": {"price_usd": 0.01}},
 )
 

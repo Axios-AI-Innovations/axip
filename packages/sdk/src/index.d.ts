@@ -282,7 +282,7 @@ export interface AXIPAgentOptions {
   name: string;
   /** Capabilities this agent provides (e.g. ['web_search', 'summarize']) */
   capabilities?: string[];
-  /** Relay WebSocket URL. Defaults to AXIP_RELAY_URL env var or 'ws://127.0.0.1:4200' */
+  /** Relay WebSocket URL. Defaults to AXIP_RELAY_URL env var or 'wss://relay.axiosaiinnovations.com'. Set to 'ws://127.0.0.1:4200' for local dev. */
   relayUrl?: string;
   /** Per-capability pricing map */
   pricing?: Record<string, PricingEntry>;

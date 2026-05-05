@@ -11,6 +11,7 @@
     "start": "node packages/relay/src/index.js",
     "demo": "bash demo/run-demo.sh",
     "relay": "node packages/relay/src/index.js",
+    "portal": "node packages/hive-portal/src/index.js",
     "alpha": "node packages/agent-alpha/src/index.js",
     "beta": "node packages/agent-beta/src/index.js"
   },

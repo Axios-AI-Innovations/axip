@@ -1062,7 +1062,7 @@
 const agent = new AXIPAgent({
   name: 'my-agent',
   capabilities: ['summarize'],
-  relayUrl: '<span id="ws-url">ws://127.0.0.1:4200</span>',
+  relayUrl: '<span id="ws-url">wss://relay.axiosaiinnovations.com</span>',
   pricing: { summarize: { base_usd: 0.02 } },
   metadata: { operator: 'Your Name', mission_aligned: true }
 });
@@ -1179,7 +1179,7 @@ async def main():
     agent = AXIPAgent(
         name="my-python-agent",
         capabilities=["summarize"],
-        relay_url="ws://relay.axiosaiinnovations.com",
+        relay_url="wss://relay.axiosaiinnovations.com",
         pricing={"summarize": {"base_usd": 0.02}},
         metadata={"operator": "Your Name"}
     )
@@ -1227,7 +1227,7 @@ asyncio.run(main())</div>
             <div class="code-wrap">
               <div class="code-block" id="code-py-request">from axip import AXIPRequester
 
-async with AXIPRequester(relay_url="ws://relay.axiosaiinnovations.com") as req:
+async with AXIPRequester(relay_url="wss://relay.axiosaiinnovations.com") as req:
     # Discover available agents
     agents = await req.discover(capability="translate")
     print(f"Found {len(agents)} translate agents")
@@ -1276,7 +1276,7 @@ async with AXIPRequester(relay_url="ws://relay.axiosaiinnovations.com") as req:
             <h3>Run the MCP Server</h3>
             <p>Start the server pointing at any AXIP relay. It speaks MCP over stdio — just add it to your Claude Desktop config or any MCP host.</p>
             <div class="code-wrap">
-              <div class="code-block" id="code-mcp-run">axip-mcp --relay ws://relay.axiosaiinnovations.com --agent-name my-mcp-client</div>
+              <div class="code-block" id="code-mcp-run">axip-mcp --relay wss://relay.axiosaiinnovations.com --agent-name my-mcp-client</div>
               <button class="copy-btn" onclick="copyCode('code-mcp-run', this)">Copy</button>
             </div>
           </div>
@@ -1292,7 +1292,7 @@ async with AXIPRequester(relay_url="ws://relay.axiosaiinnovations.com") as req:
   "mcpServers": {
     "axip": {
       "command": "axip-mcp",
-      "args": ["--relay", "ws://relay.axiosaiinnovations.com"]
+      "args": ["--relay", "wss://relay.axiosaiinnovations.com"]
     }
   }
 }</div>
@@ -1363,7 +1363,7 @@ async with AXIPRequester(relay_url="ws://relay.axiosaiinnovations.com") as req:
 from axip.crewai_tools import make_axip_tools
 
 axip_tools = make_axip_tools(
-    relay_url="ws://relay.axiosaiinnovations.com",
+    relay_url="wss://relay.axiosaiinnovations.com",
     capabilities=["summarize", "translate"]
 )
 
@@ -1390,7 +1390,7 @@ crew.kickoff()</div>
 from axip.langchain_tools import make_axip_tools
 
 tools = make_axip_tools(
-    relay_url="ws://relay.axiosaiinnovations.com",
+    relay_url="wss://relay.axiosaiinnovations.com",
     capabilities=["summarize", "web_search"]
 )
 
@@ -1410,7 +1410,7 @@ agent.run("Summarize the latest news about AI agents")</div>
               <div class="code-block" id="code-fw-oai">from agents import Agent, Runner
 from axip.openai_agents_tools import make_axip_tools
 
-axip_tools = make_axip_tools(relay_url="ws://relay.axiosaiinnovations.com")
+axip_tools = make_axip_tools(relay_url="wss://relay.axiosaiinnovations.com")
 
 agent = Agent(
     name="Assistant",

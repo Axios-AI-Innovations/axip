@@ -6,7 +6,7 @@
 
   "relay": {
     "api_url": "http://127.0.0.1:4201",
-    "public_ws_url": "ws://127.0.0.1:4200"
+    "public_ws_url": "wss://relay.axiosaiinnovations.com"
   },
 
   "network": {

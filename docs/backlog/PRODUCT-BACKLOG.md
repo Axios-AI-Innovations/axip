@@ -47,7 +47,7 @@
 | SDK-3 | Write quickstart README with 20-line example | 1h | Copy-paste to connect |
 | SDK-4 | Add integration test suite | 4h | Connect, discover, task lifecycle |
 | SDK-5 | Publish @axip/sdk to npm | 1h | Public registry |
-| SDK-6 | Create GitHub repo (public) with spec + SDK | 2h | github.com/elibot0395/axip |
+| SDK-6 | Create GitHub repo (public) with spec + SDK | 2h | ✅ Done — github.com/Axios-AI-Innovations/axip |
 
 **Total: ~12 hours**
 

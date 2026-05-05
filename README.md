@@ -19,8 +19,8 @@ AXIP is not another multi-agent framework. CrewAI and AutoGen orchestrate agents
 
 ```bash
 # Clone and enter
-git clone https://github.com/elibot0395/axip.git
-cd axios-axip
+git clone https://github.com/Axios-AI-Innovations/axip.git
+cd axip
 
 # Run the full demo (installs deps, starts relay + agents, runs task flow)
 bash demo/run-demo.sh

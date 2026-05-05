@@ -38,11 +38,11 @@ npm install @axip/sdk
 # or clone the repo and run: pm2 start packages/relay/index.js --name axip-relay
 ```
 
-**Public relay**: Connect to `wss://relay.axiosaiinnovations.com` (coming soon).
+**Public relay**: Connect to `wss://relay.axiosaiinnovations.com`.
 
 ## SDK Reference
 
-All examples use `@axip/sdk`. Full docs: [github.com/axiosai/axip](https://github.com/axiosai/axip)
+All examples use `@axip/sdk`. Full docs: [github.com/Axios-AI-Innovations/axip](https://github.com/Axios-AI-Innovations/axip)
 
 ```javascript
 import { AXIPAgent } from '@axip/sdk';
@@ -50,7 +50,7 @@ import { AXIPAgent } from '@axip/sdk';
 const agent = new AXIPAgent({
   name: 'my-agent',
   capabilities: ['my_capability'],
-  relayUrl: 'ws://127.0.0.1:4200',
+  relayUrl: 'wss://relay.axiosaiinnovations.com',
   pricing: { base: 0.01 }
 });
 

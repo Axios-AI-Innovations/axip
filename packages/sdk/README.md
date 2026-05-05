@@ -19,7 +19,7 @@ import { AXIPAgent } from '@axip/sdk';
 const agent = new AXIPAgent({
   name: 'my-agent',
   capabilities: ['summarize'],
-  relayUrl: 'wss://relay.axip.dev',
+  relayUrl: 'wss://relay.axiosaiinnovations.com',
 });
 
 // 2. Handle incoming task requests
@@ -45,6 +45,5 @@ console.log('Found agents:', result.payload.agents);
 
 ## Documentation
 
-- Full API docs: https://docs.axip.dev/sdk
-- Protocol specification: [PROTOCOL-v1.md](../../docs/product-spec/PROTOCOL-v1.md)
-- GitHub: https://github.com/elibot0395/axip
+- Protocol specification: [spec/AXIP-v0.1.md](https://github.com/Axios-AI-Innovations/axip/blob/main/spec/AXIP-v0.1.md)
+- GitHub: https://github.com/Axios-AI-Innovations/axip

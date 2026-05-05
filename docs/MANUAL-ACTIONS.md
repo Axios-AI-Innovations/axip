@@ -13,11 +13,9 @@
 - **Time:** 15 min
 - **How:** Open Twingate client on laptop, SSH to Mac Mini, curl localhost:4201/health.
 
-### GitHub: Create Public Repo on elibot0395
-- **What:** Create `elibot0395/axip` (or similar) on github.com. Initialize empty — Claude Code will push SDK, spec, and examples.
-- **Why:** Unblocks SDK-6 (publish SDK) and all Week 2 tasks that reference a public repo.
-- **Time:** 5 min
-- **How:** github.com/new — name it `axip`, public, no template, no README (will be pushed from local).
+### GitHub: Create Public Repo  ✅ DONE
+- **Status:** Complete — public repo lives at https://github.com/Axios-AI-Innovations/axip
+- **Note:** Org slug is `Axios-AI-Innovations`, not `elibot0395` or `axiosai`. Use this URL in all docs and examples.
 
 ### Stripe Connect: Enable on Existing Stripe Account
 - **What:** Go to Stripe Dashboard > Connect > Get Started. Choose Express onboarding. Enable in test mode first.

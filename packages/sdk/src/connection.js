@@ -17,7 +17,7 @@ import { EventEmitter } from 'events';
 export class AXIPConnection extends EventEmitter {
   /**
    * @param {Object} opts
-   * @param {string} opts.url - WebSocket URL (e.g. 'ws://127.0.0.1:4200')
+   * @param {string} opts.url - WebSocket URL (e.g. 'wss://relay.axiosaiinnovations.com' for production, 'ws://127.0.0.1:4200' for local dev)
    * @param {boolean} [opts.reconnect=true] - Auto-reconnect on disconnect
    * @param {number} [opts.heartbeatInterval=30000] - Heartbeat interval in ms
    * @param {number} [opts.maxReconnectDelay=30000] - Max delay between reconnects

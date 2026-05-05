@@ -22,10 +22,10 @@ export class AXIPAgent extends EventEmitter {
    * @param {Object} opts
    * @param {string} opts.name - Agent name (also used as identity directory name)
    * @param {string[]} [opts.capabilities=[]] - Capabilities this agent provides
-   * @param {string} [opts.relayUrl='ws://127.0.0.1:4200'] - Relay WebSocket URL
+   * @param {string} [opts.relayUrl='wss://relay.axiosaiinnovations.com'] - Relay WebSocket URL. Override with AXIP_RELAY_URL env var (e.g. 'ws://127.0.0.1:4200' for local dev).
    * @param {Object} [opts.pricing={}] - Pricing for capabilities
    */
-  constructor({ name, capabilities = [], relayUrl = process.env.AXIP_RELAY_URL || 'ws://127.0.0.1:4200', pricing = {}, metadata = {} }) {
+  constructor({ name, capabilities = [], relayUrl = process.env.AXIP_RELAY_URL || 'wss://relay.axiosaiinnovations.com', pricing = {}, metadata = {} }) {
     super();
 
     this.name = name;
