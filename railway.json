@@ -5,7 +5,6 @@
     "buildCommand": "npm install --workspaces --include-workspace-root"
   },
   "deploy": {
-    "startCommand": "npm run relay",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 10,
     "healthcheckPath": null,
